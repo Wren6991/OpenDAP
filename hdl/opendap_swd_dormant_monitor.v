@@ -6,7 +6,7 @@
 // Watch for switches between the Dormant and SWD link states.
 // Ref: IHI0031F, "B5.3 Dormant Operation"
 
-module opendap_dormant_monitor (
+module opendap_swd_dormant_monitor (
 	input  wire swclk,
 	input  wire rst_n,
 
