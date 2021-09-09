@@ -26,9 +26,23 @@ tb::tb(std::string vcdfile) {
 	dp->p_ap__rdy.set<bool>(true);
 	dp->step();
 
+	swclk_prev = false;
+	read_callback = NULL;
+	write_callback = NULL;
+	last_read_response.delay_cycles = 0;
+	last_write_response.delay_cycles = 0;
+
 	vcd.sample(vcd_sample++);
 	waves_fd << vcd.buffer;
 	vcd.buffer.clear();
+}
+
+void tb::set_ap_read_callback(ap_read_callback cb) {
+	read_callback = cb;
+}
+
+void tb::set_ap_write_callback(ap_write_callback cb) {
+	write_callback = cb;
 }
 
 void tb::set_swclk(bool swclk) {
@@ -50,10 +64,52 @@ void tb::set_instid(uint8_t instid) {
 }
 
 void tb::step() {
-	static_cast<cxxrtl_design::p_opendap__sw__dp*>(dut)->step();
+	cxxrtl_design::p_opendap__sw__dp *dp = static_cast<cxxrtl_design::p_opendap__sw__dp*>(dut);
+	dp->step();
 	vcd.sample(vcd_sample++);
 	waves_fd << vcd.buffer;
 	vcd.buffer.clear();
+
+	// Field AP accesses using testcase callbacks if available, and provide AP
+	// bus responses with correct timing based on callback results.
+	if (swclk_prev && !dp->p_swclk.get<bool>()) {
+		if (last_read_response.delay_cycles > 0) {
+			--last_read_response.delay_cycles;
+			if (last_read_response.delay_cycles == 0) {
+				dp->p_ap__rdata.set<uint32_t>(last_read_response.rdata);
+				dp->p_ap__err.set<bool>(last_read_response.err);
+				dp->p_ap__rdy.set<bool>(1);
+			}
+		}
+		else if (last_write_response.delay_cycles > 0) {
+			--last_write_response.delay_cycles;
+			if (last_write_response.delay_cycles > 0) {
+				dp->p_ap__err.set<bool>(last_write_response.err);
+				dp->p_ap__err.set<bool>(1);
+			}
+		}
+		if (dp->p_ap__ren.get<bool>() && read_callback) {
+			last_read_response = read_callback(dp->p_ap__addr.get<uint16_t>() | dp->p_ap__sel.get<uint16_t>() << 6);
+			if (last_read_response.delay_cycles == 0) {
+				dp->p_ap__rdata.set<uint32_t>(last_read_response.rdata);
+				dp->p_ap__err.set<bool>(last_read_response.err);
+			}
+			else {
+				dp->p_ap__rdy.set<bool>(0);
+			}
+		}
+		else if (dp->p_ap__wen.get<bool>() && write_callback) {
+			last_write_response = write_callback(dp->p_ap__addr.get<uint16_t>() | dp->p_ap__sel.get<uint16_t>() << 6,
+				dp->p_ap__wdata.get<uint32_t>());
+			if (last_write_response.delay_cycles == 0) {
+				dp->p_ap__err.set<bool>(last_write_response.err);
+			}
+			else {
+				dp->p_ap__rdy.set<bool>(0);
+			}
+		}
+	}
+	swclk_prev = dp->p_swclk.get<bool>();
 }
 
 // Convenience functions

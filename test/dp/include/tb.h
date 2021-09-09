@@ -6,12 +6,27 @@
 #include <backends/cxxrtl/cxxrtl.h>
 #include <backends/cxxrtl/cxxrtl_vcd.h>
 
+struct ap_read_response {
+	uint32_t rdata;
+	int delay_cycles;
+	bool err;
+};
 
-// Instantiate new testbench, write your stimulus for the testcase.
+struct ap_write_response {
+	int delay_cycles;
+	bool err;
+};
+
+typedef ap_read_response (*ap_read_callback)(uint16_t addr);
+
+typedef ap_write_response (*ap_write_callback)(uint16_t addr, uint32_t data);
 
 class tb {
 public:
 	tb(std::string vcdfile);
+	void set_ap_read_callback(ap_read_callback cb);
+	void set_ap_write_callback(ap_write_callback cb);
+
 	void set_swclk(bool swclk);
 	void set_swdi(bool swdi);
 	bool get_swdo();
@@ -19,6 +34,11 @@ public:
 	void step();
 private:
 	int vcd_sample;
+	bool swclk_prev;
+	ap_read_callback read_callback;
+	ap_read_response last_read_response;
+	ap_write_callback write_callback;
+	ap_write_response last_write_response;
 	std::ofstream waves_fd;
 	cxxrtl::vcd_writer vcd;
 	cxxrtl::module *dut;

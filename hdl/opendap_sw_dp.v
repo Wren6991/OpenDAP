@@ -188,9 +188,6 @@ wire hostacc_protocol_err =
 // ----------------------------------------------------------------------------
 // Serial comms unit
 
-
-
-
 wire any_sticky_errors = ctrl_stat_stickyorun || ctrl_stat_stickyorun || ctrl_stat_wdataerr;
 
 // Access when a sticky flag is set causes a FAULT response, with the
@@ -228,5 +225,21 @@ opendap_sw_dp_serial_comms serial_comms (
 	.dp_acc_protocol_err (hostacc_protocol_err),
 	.ap_rdy              (ap_rdy)
 );
+
+// ----------------------------------------------------------------------------
+// AP signalling
+
+assign ap_wen = hostacc_write && hostacc_ap_ndp;
+assign ap_ren = hostacc_read && hostacc_ap_ndp;
+assign ap_sel = select_apsel;
+assign ap_addr = {select_apbanksel, hostacc_addr};
+assign ap_wdata = hostacc_wdata;
+
+
+// TODO ap register number will be unstable. We might have to pull the
+// AP->data_sreg sampling forward by one cycle, just ahead of the next
+// hostacc_read, and then add some flops to keep the 2 LSBs stable up til
+// this point. The rest of it is fine -- SELECT can't be accessed in between
+// the read issue and read data sampling.
 
 endmodule
