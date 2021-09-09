@@ -149,7 +149,7 @@ always @ (*) begin
 				if (link_state == LINK_RESET) begin
 					// Do not drive swdo_en -- TARGETSEL is supposed to be unacknowledged.
 					phase_nxt = PHASE_TARGETSEL_ACK;
-					bit_ctr_nxt = 6'd2;
+					bit_ctr_nxt = 6'd4;
 				end else begin
 					// Writes to TARGETSEL which don't immediately follow a line reset are
 					// UNPREDICTABLE (ref B4.3.4). We allow multiple successful TARGETSELs when in
@@ -191,8 +191,13 @@ always @ (*) begin
 				swdo_nxt = bit_ctr == 6'd1;
 			end else begin
 				phase_nxt = PHASE_TURN_TO_IDLE;
+				// At minimum, one cycle turnaround, plus another cycle to make up for the cycle we
+				// swallowed by jumping straight in form the Park cycle to get the ACK out early
+				// enough. If ORUNDETECT is set, an additional 33 cycles (data + parity).
 				if (dp_orundetect)
-					bit_ctr_nxt = 6'd32;
+					bit_ctr_nxt = 6'd34;
+				else
+					bit_ctr_nxt = 6'd1;
 			end
 		end
 
@@ -203,7 +208,9 @@ always @ (*) begin
 			end else begin
 				phase_nxt = PHASE_TURN_TO_IDLE;
 				if (dp_orundetect)
-					bit_ctr_nxt = 6'd32;
+					bit_ctr_nxt = 6'd34;
+				else
+					bit_ctr_nxt = 6'd1;
 			end
 		end
 

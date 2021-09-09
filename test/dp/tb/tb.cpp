@@ -149,6 +149,23 @@ uint8_t swd_header(ap_dp_t ap_ndp, bool read_nwrite, uint8_t addr) {
 		1u << 7;   
 }
 
+void swd_targetsel(tb &t, uint32_t id) {
+	uint8_t header = swd_header(DP, 0, 3);
+	put_bits(t, &header, 8);
+	// No response to TARGETSEL.
+	hiz_clocks(t, 5);
+	uint8_t txbuf[4];
+	for (int i = 0; i < 4; ++i)
+		txbuf[i] = (id >> i * 8) & 0xff;
+	put_bits(t, txbuf, 32);
+	// Parity
+	txbuf[0] = 0;
+	for (int i = 0; i < 32; ++i)
+		txbuf[0] ^= (id >> i) & 0x1;
+	put_bits(t, txbuf, 1);
+}
+
+
 swd_status_t swd_read(tb &t, ap_dp_t ap_ndp, uint8_t addr, uint32_t &data) {
 	uint8_t header = swd_header(ap_ndp, 1, addr);
 	put_bits(t, &header, 8);

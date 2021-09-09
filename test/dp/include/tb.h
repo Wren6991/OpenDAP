@@ -47,10 +47,11 @@ void get_bits(tb &t, uint8_t *rx, int n_bits);
 void hiz_clocks(tb &t, int n_bits);
 void idle_clocks(tb &t, int n_bits);
 
+uint8_t swd_header(ap_dp_t ap_ndp, bool read_nwrite, uint8_t addr);
+
 void send_dormant_to_swd(tb &t);
 void swd_line_reset(tb &t);
-
-uint8_t swd_header(ap_dp_t ap_ndp, bool read_nwrite, uint8_t addr);
+void swd_targetsel(tb &t, uint32_t id);
 
 swd_status_t swd_read(tb &t, ap_dp_t ap_dp, uint8_t addr, uint32_t &data);
 swd_status_t swd_write(tb &t, ap_dp_t ap_dp, uint8_t addr, uint32_t data);
