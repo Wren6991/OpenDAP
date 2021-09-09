@@ -7,6 +7,8 @@
 // protocol errors, provide OK/WAIT/FAULT responses. Perform parallel
 // accesses on the core DP logic, which may be forwarded on to the AP.
 
+`default_nettype none
+
  module opendap_sw_dp_serial_comms (
 	input  wire        swclk,
 	input  wire        rst_n,
@@ -234,6 +236,7 @@ always @ (*) begin
 				swdo_en_nxt = 1'b1;
 				swdo_nxt = data_sreg[0];
 				data_parity_nxt = data_parity ^ data_sreg[0];
+				data_sreg_en = 1'b1;
 			end
 		end
 
@@ -334,7 +337,5 @@ always @ (posedge swclk or negedge rst_n) begin
 			header_sreg <= {swdi_reg, header_sreg[5:1]};
 	end
 end
-
-always @ (posedge clk or negedge
 
 endmodule

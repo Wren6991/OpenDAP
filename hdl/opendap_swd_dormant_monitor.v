@@ -6,6 +6,8 @@
 // Watch for switches between the Dormant and SWD link states.
 // Ref: IHI0031F, "B5.3 Dormant Operation"
 
+`default_nettype none
+
 module opendap_swd_dormant_monitor (
 	input  wire swclk,
 	input  wire rst_n,
@@ -58,7 +60,6 @@ always @ (*) begin
 
 	enter_dormant = 1'b0;
 	exit_dormant = 1'b0;
-	line_reset = 1'b0;
 	lfsr_resync = 1'b1;
 
 	case (state)

@@ -3,6 +3,10 @@
 // SPDX-License-Identifier CC0-1.0
 // ----------------------------------------------------------------------------
 
+// SW-DP implementation. Supports DPv2, SWD version 2.
+
+`default_nettype none
+
  module opendap_sw_dp #(
 	parameter DPIDR     = 32'hdeadbeef,
 	parameter TARGETID  = 32'hbaadf00d,
@@ -113,7 +117,7 @@ end
 always @ (*) begin
 	if (hostacc_ap_ndp) begin
 		hostacc_rdata = ap_rdata;
-	end else casez ({hostacc_addr, select_dpbanksel}
+	end else casez ({hostacc_addr, select_dpbanksel})
 		6'h0z: hostacc_rdata = DPIDR;
 
 		6'h10: hostacc_rdata = {
@@ -176,8 +180,7 @@ wire hostacc_protocol_err =
 	(hostacc_write && !hostacc_ap_ndp && {hostacc_addr, select_dpbanksel} == 6'h11 && // Bad TURNROUND
 		hostacc_wdata[9:8] != 2'b00) ||
 	(hostacc_read  && !hostacc_ap_ndp &&  hostacc_addr                    == 2'b10 && // Bad RESEND
-		!resend_possible
-
+		!resend_possible);
 
 // ----------------------------------------------------------------------------
 // Serial comms unit
@@ -219,6 +222,8 @@ opendap_sw_dp_serial_comms serial_comms (
 	.dp_set_stickyorun   (set_stickyorun),
 	.dp_orundetect       (ctrl_stat_orundetect),
 	.dp_acc_fault        (hostacc_fault),
-	.dp_acc_protocol_err (dp_acc_protocol_err),
+	.dp_acc_protocol_err (hostacc_protocol_err),
 	.ap_rdy              (ap_rdy)
 );
+
+endmodule
