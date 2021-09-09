@@ -15,6 +15,7 @@ public:
 	void set_swclk(bool swclk);
 	void set_swdi(bool swdi);
 	bool get_swdo();
+	void set_instid(uint8_t instid);
 	void step();
 private:
 	int vcd_sample;

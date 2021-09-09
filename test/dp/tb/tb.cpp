@@ -45,6 +45,10 @@ bool tb::get_swdo() {
 		static_cast<cxxrtl_design::p_opendap__sw__dp*>(dut)->p_swdo.get<bool>() : true;
 }
 
+void tb::set_instid(uint8_t instid) {
+	static_cast<cxxrtl_design::p_opendap__sw__dp*>(dut)->p_instid.set<uint8_t>(instid);
+}
+
 void tb::step() {
 	static_cast<cxxrtl_design::p_opendap__sw__dp*>(dut)->step();
 	vcd.sample(vcd_sample++);

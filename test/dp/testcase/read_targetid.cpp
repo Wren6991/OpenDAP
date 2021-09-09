@@ -10,13 +10,13 @@ int main() {
 
 	// DPIDR read to transition to active state
 	uint32_t data = 0;
-	(void)swd_read(t, DP, 0, data);
+	(void)swd_read(t, DP, DP_REG_DPIDR, data);
 
-	// Set DPBANKSEL to 2. Note our addresses are just A[3:2], not A[3:0].
-	data = 0x2;
-	(void)swd_write(t, DP, 2, data);
+	// Set DPBANKSEL.
+	data = DP_BANK_TARGETID;
+	(void)swd_write(t, DP, DP_REG_SELECT, data);
 
-	swd_status_t status = swd_read(t, DP, 1, data);
+	swd_status_t status = swd_read(t, DP, DP_REG_TARGETID, data);
 
 	return status == OK && data == TARGETID_EXPECTED ? 0 : -1;
 }
