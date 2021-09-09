@@ -1,3 +1,21 @@
-all:
+TESTCASES := $(wildcard *.cpp)
+TEST_EXCECS := $(addprefix build/,$(patsubst %.cpp,%,$(TESTCASES)))
+TESTS_RUN := $(addprefix run.,$(patsubst %.cpp,%,$(TESTCASES)))
+
+.PHONY: all clean
+.SECONDARY:
+all: $(TESTS_RUN)
+
+build/%: %.cpp ../tb/tb.o
+	mkdir -p build
+	clang++ -O3 -std=c++14 -I ../include -I $(shell yosys-config --datdir)/include $< ../tb/tb.o -o $@
+
+run.%: build/%
+	./$<
+
+../tb/tb.o:
 	make -C ../tb
-	clang++ -O3 -std=c++14 -I ../include -I $(shell yosys-config --datdir)/include read_dpidr.cpp ../tb/tb.o -o read_dpidr
+
+clean:
+	make -C ../tb clean
+	rm -rf build

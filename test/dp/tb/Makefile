@@ -14,7 +14,7 @@ dut.cpp: $(SRCS)
 	yosys -p "$(SYNTH_CMD)" 2>&1 > cxxrtl.log
 
 clean::
-	rm -f dut.cpp cxxrtl.log tb
+	rm -f dut.cpp cxxrtl.log tb.o
 
 tb.o: dut.cpp tb.cpp
 	clang++ -O3 -std=c++14 $(addprefix -D,$(CDEFINES)) -I $(shell yosys-config --datdir)/include -I ../include -c tb.cpp -o tb.o

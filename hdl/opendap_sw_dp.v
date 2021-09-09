@@ -211,11 +211,11 @@ opendap_sw_dp_serial_comms serial_comms (
 	.swdo_en             (swdo_en),
 
 	.bus_addr            (hostacc_addr),
-	.bus_wen             (hostacc_r_nw),
+	.bus_r_nw            (hostacc_r_nw),
 	.bus_ap_ndp          (hostacc_ap_ndp),
 	.bus_wdata           (hostacc_wdata),
 	.bus_rdata           (hostacc_rdata),
-	.bus_ren             (hostacc_en),
+	.bus_en              (hostacc_en),
 
 	.targetsel_expected  ({instid, TARGETID[27:0]}),
 	.dp_set_wdataerr     (set_wdataerr),

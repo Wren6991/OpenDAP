@@ -162,11 +162,36 @@ swd_status_t swd_read(tb &t, ap_dp_t ap_ndp, uint8_t addr, uint32_t &data) {
 	}
 	uint8_t rxbuf[4];
 	get_bits(t, rxbuf, 32);
-	hiz_clocks(t, 1);
 	data = 0;
 	for (int i = 0; i < 4; ++i)
 		data = (data >> 8) | ((uint32_t)rxbuf[i] << 24);
+	// Just discard parity bit -- have a separate test for that.
+	get_bits(t, rxbuf, 1);
+	// Turnaround for next packet header
+	hiz_clocks(t, 1);
 	return (swd_status_t)status;
 }
 
-
+swd_status_t swd_write(tb &t, ap_dp_t ap_ndp, uint8_t addr, uint32_t data) {
+	uint8_t header = swd_header(ap_ndp, 0, addr);
+	put_bits(t, &header, 8);
+	hiz_clocks(t, 1);
+	uint8_t status;
+	get_bits(t, &status, 3);
+	if (status != OK) {
+		hiz_clocks(t, 1);
+		data = 0;
+		return (swd_status_t)status;
+	}
+	hiz_clocks(t, 1);
+	uint8_t txbuf[4];
+	for (int i = 0; i < 4; ++i)
+		txbuf[i] = (data >> i * 8) & 0xff;
+	put_bits(t, txbuf, 32);
+	// Parity
+	txbuf[0] = 0;
+	for (int i = 0; i < 32; ++i)
+		txbuf[0] ^= (data >> i) & 0x1;
+	put_bits(t, txbuf, 1);
+	return (swd_status_t)status;
+}

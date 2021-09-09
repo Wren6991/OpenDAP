@@ -63,10 +63,10 @@ reg       header_sreg_en;
 reg [31:0] data_sreg;
 reg        data_sreg_en;
 
-wire header_ok     = ~^header_sreg[4:0] && !header_sreg[5] && swdi_reg;
-wire header_addr   = header_sreg[3:2];
-wire header_r_nw   = header_sreg[1];
-wire header_ap_ndp = header_sreg[0];
+wire       header_ok     = ~^header_sreg[4:0] && !header_sreg[5] && swdi_reg;
+wire [1:0] header_addr   = header_sreg[3:2];
+wire       header_r_nw   = header_sreg[1];
+wire       header_ap_ndp = header_sreg[0];
 
 wire header_is_dpidr_read = !header_ap_ndp && header_r_nw && header_addr == 2'b00;
 wire header_is_targetsel_write = !header_ap_ndp && !header_r_nw && header_addr == 2'b11;
@@ -86,7 +86,7 @@ localparam LINK_LOCKEDOUT        = 2'd3;
 localparam W_PHASE_STATE         = 4;
 localparam PHASE_IDLE            = 4'd0;
 localparam PHASE_HEADER          = 4'd1;
-localparam PHASE_TURN_TO_ACK     = 4'd2;
+localparam PHASE_PARK            = 4'd2;
 localparam PHASE_ACK_WAIT        = 4'd3;
 localparam PHASE_ACK_FAULT       = 4'd4;
 localparam PHASE_ACK_OK          = 4'd5;
@@ -134,13 +134,14 @@ always @ (*) begin
 		PHASE_HEADER: begin
 			header_sreg_en = 1'b1;
 			if (~|bit_ctr) begin
-				phase_nxt = PHASE_TURN_TO_ACK;
+				phase_nxt = PHASE_PARK;
 			end
 		end
 
-		PHASE_TURN_TO_ACK: begin
-			// Note this is actually the cycle where the park bit appears in swdi_reg. The posedge
-			// after we register the park bit is the edge where we assert the first ACK bit.
+		PHASE_PARK: begin
+			// This is the cycle where the park bit appears in swdi_reg. That means, in the outside
+			// world, the park-to-ACK turnaround is ongoing. The posedge after we register the park
+			// bit is the edge where we assert the first ACK bit.
 			if (!header_ok) begin
 				link_state_nxt = LINK_LOCKEDOUT;
 				dp_set_stickyorun = dp_orundetect;
@@ -173,7 +174,7 @@ always @ (*) begin
 					phase_nxt = PHASE_ACK_WAIT;
 					dp_set_stickyorun = dp_orundetect;
 				end else begin
-					bus_en = 1'b1;
+					bus_en = header_r_nw;
 					if (dp_acc_protocol_err) begin
 						link_state_nxt = LINK_LOCKEDOUT;
 					end else begin
@@ -223,12 +224,14 @@ always @ (*) begin
 				bit_ctr_nxt = 6'd32;
 			end else begin
 				phase_nxt = PHASE_TURN_TO_WDATA;
+				bit_ctr_nxt = 1'b1;
 			end
 		end
 
 		PHASE_RDATA: begin
 			if (bit_ctr == 6'd0) begin
 				phase_nxt = PHASE_TURN_FROM_RDATA;
+				bit_ctr_nxt = 6'd1;
 			end else if (bit_ctr == 6'd1) begin
 				swdo_en_nxt = 1'b1;
 				swdo_nxt = data_parity;
@@ -241,12 +244,18 @@ always @ (*) begin
 		end
 
 		PHASE_TURN_FROM_RDATA: begin
-			phase_nxt = PHASE_IDLE;
+			// This lasts for two cycles, for similar reasons to TURN_TO_WDATA
+			if (~|bit_ctr)
+				phase_nxt = PHASE_IDLE;
 		end
 
 		PHASE_TURN_TO_WDATA: begin
-			phase_nxt = PHASE_WDATA;
-			bit_ctr_nxt = 6'd32;
+			// This lasts for two cycles -- we swallowed one cycle by jumping the gun at the park
+			// bit, to get the ACK out on time. Now we need to sync back up to the bits on swdi_reg.
+			if (~|bit_ctr) begin
+				phase_nxt = PHASE_WDATA;
+				bit_ctr_nxt = 6'd32;
+			end
 		end
 
 		PHASE_WDATA: begin

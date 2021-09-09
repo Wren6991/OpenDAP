@@ -23,7 +23,10 @@ private:
 	cxxrtl::module *dut;
 };
 
-// Convenience functions:
+// Constants
+
+static const uint32_t DPIDR_EXPECTED = 0xdeadbeefu;
+static const uint32_t TARGETID_EXPECTED = 0xbaadf00du; 
 
 enum ap_dp_t {
 	DP = 0,
@@ -36,6 +39,8 @@ enum swd_status_t {
 	FAULT        = 4,
 	DISCONNECTED = 7
 };
+
+// Convenience functions
 
 void put_bits(tb &t, const uint8_t *tx, int n_bits);
 void get_bits(tb &t, uint8_t *rx, int n_bits);
