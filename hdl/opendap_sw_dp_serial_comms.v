@@ -16,18 +16,18 @@
 	output reg         swdo_en,
 
 	output wire [1:0]  bus_addr,
-	output wire [1:0]  bus_ap_ndp,
+	output wire        bus_r_nw,
+	output wire        bus_ap_ndp,
 	output wire [31:0] bus_wdata,
-	output reg         bus_wen,
+	output reg         bus_en,
 	input  wire [31:0] bus_rdata,
-	output reg         bus_ren,
 
-	input  wire [31:0] targetid,
+	input  wire [31:0] targetsel_expected,
 
 	output reg         dp_set_wdataerr,
 	output reg         dp_set_stickyorun,
 	input  wire        dp_orundetect,
-	input  wire        dp_any_sticky_err,
+	input  wire        dp_acc_fault,
 	input  wire        dp_acc_protocol_err,
 	input  wire        ap_rdy
 );
@@ -66,7 +66,12 @@ wire header_addr   = header_sreg[3:2];
 wire header_r_nw   = header_sreg[1];
 wire header_ap_ndp = header_sreg[0];
 
+wire header_is_dpidr_read = !header_ap_ndp && header_r_nw && header_addr == 2'b00;
+wire header_is_targetsel_write = !header_ap_ndp && !header_r_nw && header_addr == 2'b11;
+wire header_is_resend = !header_ap_ndp && header_r_nw && header_addr == 2'b11;
+
 assign bus_ap_ndp  = header_ap_ndp;
+assign bus_r_nw    = header_r_nw;
 assign bus_addr    = header_addr;
 assign bus_wdata   = data_sreg;
 
@@ -106,10 +111,9 @@ always @ (*) begin
 	data_parity_nxt = 1'b0;
 
 	header_sreg_en = 1'b0;
-	data_sreg_en = 1'b0; 
+	data_sreg_en = 1'b0;
 
-	bus_wen = 1'b0;
-	bus_ren = 1'b0;
+	bus_en = 1'b0;
 	dp_set_wdataerr = 1'b0;
 	dp_set_stickyorun = 1'b0;
 
@@ -137,7 +141,8 @@ always @ (*) begin
 			// after we register the park bit is the edge where we assert the first ACK bit.
 			if (!header_ok) begin
 				link_state_nxt = LINK_LOCKEDOUT;
-			end else if (!header_ap_ndp && !header_r_nw && header_addr == 2'b11) begin
+				dp_set_stickyorun = dp_orundetect;
+			end else if (header_is_targetsel_write) begin
 				if (link_state == LINK_RESET) begin
 					// Do not drive swdo_en -- TARGETSEL is supposed to be unacknowledged.
 					phase_nxt = PHASE_TARGETSEL_ACK;
@@ -146,10 +151,10 @@ always @ (*) begin
 					// Writes to TARGETSEL which don't immediately follow a line reset are
 					// UNPREDICTABLE (ref B4.3.4). We allow multiple successful TARGETSELs when in
 					// the reset state, but after leaving the reset state via DPIDR read, TARGETSEL
-					// causes unconditional lockout/deselect.
+					// causes unconditional lockout.
 					link_state_nxt = LINK_LOCKEDOUT;
 				end
-			end else if (link_state == LINK_RESET && !(!header_ap_ndp && header_r_nw && header_addr == 2'b00) begin
+			end else if (link_state == LINK_RESET && !header_is_dpidr_read) begin
 				// In reset state, anything but TARGETSEL write or DPIDR read causes immediate lockout
 				link_state_nxt = LINK_LOCKEDOUT;
 			end else begin
@@ -157,15 +162,16 @@ always @ (*) begin
 				link_state_nxt = LINK_ACTIVE;
 				swdo_en_nxt = 1'b1;
 				bit_ctr_nxt = 6'd2;
-				if (dp_any_sticky_err) begin
+				if (dp_acc_fault) begin
+					// This depends on the sticky error status, the packet header, *and* the value
+					// of DPBANKSEL, so we rely on the DP to decode faults.
 					phase_nxt = PHASE_ACK_FAULT;
 					dp_set_stickyorun = dp_orundetect;
 				end else if (!ap_rdy) begin
 					phase_nxt = PHASE_ACK_WAIT;
 					dp_set_stickyorun = dp_orundetect;
 				end else begin
-					bus_ren = 1'b1;
-					// Path from bus_ren -> dp_acc_protocol_err, careful to avoid loop.
+					bus_en = 1'b1;
 					if (dp_acc_protocol_err) begin
 						link_state_nxt = LINK_LOCKEDOUT;
 					end else begin
@@ -246,7 +252,7 @@ always @ (*) begin
 				if (swdi_reg != data_parity) begin
 					dp_set_wdataerr = 1'b1;
 				end else begin
-					bus_wen = 1'b1;
+					bus_en = 1'b1;
 				end
 			end else begin
 				data_sreg_en = 1'b1;
@@ -259,16 +265,15 @@ always @ (*) begin
 				phase_nxt = PHASE_TARGETSEL_DATA;
 				bit_ctr_nxt = 6'd32;
 			end
-			
+
 		end
 
 		PHASE_TARGETSEL_DATA: begin
 			// There are lots of words in the spec but TARGETSEL seems to really be "go to lockout
-			// state if TARGETID doesn't match data". A parity error is treated as a TARGETID
-			// mismatch (B4.1.6) and also, confusingly, as a protocol error (B4.3.4), which we
-			// luckily handle identically.
+			// state if ID doesn't match". A parity error is treated as a ID mismatch (B4.1.6) and
+			// also, confusingly, as a protocol error (B4.3.4), which we would handle identically.
 			if (~|bit_ctr) begin
-				if (targetid != data_sreg || swdi_reg != data_parity) begin
+				if (targetsel_expected != data_sreg || swdi_reg != data_parity) begin
 					link_state_nxt = LINK_LOCKEDOUT;
 				end else begin
 					phase_nxt = PHASE_IDLE;
@@ -284,8 +289,10 @@ always @ (*) begin
 
 	if (link_state == LINK_DORMANT && exit_dormant)
 		link_state_nxt = LINK_RESET;
-	if (link_state == LINK_LOCKEDOUT && line_reset)
+	if (link_state == LINK_LOCKEDOUT && line_reset) begin
 		link_state_nxt = LINK_RESET;
+		dp_set_stickyorun = dp_orundetect;
+	end
 	if (enter_dormant)
 		link_state_nxt = LINK_DORMANT;
 
@@ -294,5 +301,40 @@ always @ (*) begin
 
 end
 
+always @ (posedge swclk or negedge rst_n) begin
+	if (!rst_n) begin
+		link_state  <= LINK_DORMANT;
+		phase       <= PHASE_IDLE;
+		bit_ctr     <= 6'h0;
+		data_parity <= 1'b0;
+		swdo        <= 1'b0;
+		swdo_en     <= 1'b0;
+	end else begin
+		link_state  <= link_state_nxt;
+		phase       <= phase_nxt;
+		bit_ctr     <= bit_ctr_nxt;
+		data_parity <= data_parity_nxt;
+		swdo        <= swdo_nxt;
+		swdo_en     <= swdo_en_nxt;
+	end
+end
+
+always @ (posedge swclk or negedge rst_n) begin
+	if (!rst_n) begin
+		data_sreg <= 32'h0;
+		header_sreg <= 6'h0;
+	end else begin
+		// On reads we recirculate the data so that we can RESEND it.
+		if (data_sreg_en)
+			data_sreg <= {header_r_nw ? data_sreg[0] : swdi_reg, data_sreg[31:1]};
+		if (bus_en && bus_r_nw && !header_is_resend)
+			data_sreg <= bus_rdata;
+
+		if (header_sreg_en)
+			header_sreg <= {swdi_reg, header_sreg[5:1]};
+	end
+end
+
+always @ (posedge clk or negedge
 
 endmodule

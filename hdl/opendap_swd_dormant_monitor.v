@@ -42,9 +42,10 @@ end
 localparam W_STATE = 3;
 localparam S_D2S_START_BIT = 3'd0;
 localparam S_D2S_ALERT     = 3'd1;
-localparam S_D2S_SELECT    = 3'd2;
-localparam S_S2D_RESET     = 3'd3;
-localparam S_S2D_SELECT    = 3'd4;
+localparam S_D2S_POSTALERT = 3'd2;
+localparam S_D2S_SELECT    = 3'd3;
+localparam S_S2D_RESET     = 3'd4;
+localparam S_S2D_SELECT    = 3'd5;
 
 reg [6:0]         bit_ctr, bit_ctr_nxt;
 reg [5:0]         rst_ctr, rst_ctr_nxt;
@@ -71,18 +72,25 @@ always @ (*) begin
 		if (swdi_reg == lfsr[0]) begin
 			lfsr_resync = 1'b0;
 			if (~|bit_ctr) begin
-				bit_ctr_nxt = 7'd7;
-				state_nxt = S_D2S_SELECT;
+				bit_ctr_nxt = 7'd3;
+				state_nxt = S_D2S_POSTALERT;
 			end
 		end else begin
 			bit_ctr_nxt = 7'd126;
 			state_nxt = swdi_reg ? S_D2S_START_BIT : S_D2S_ALERT;
 		end
 	end
+	S_D2S_POSTALERT: begin
+		// Ignore 4 cycles whilst host drives SWDIO low.
+		if (~|bit_ctr) begin
+			bit_ctr_nxt = 7'd7;
+			state_nxt = S_D2S_SELECT;
+		end
+	end
 	S_D2S_SELECT: begin
 		if (swdi_reg == SELECT_D2S[bit_ctr]) begin
 			if (~|bit_ctr) begin
-				enter_dormant = 1'b1;
+				exit_dormant = 1'b1;
 				state_nxt = S_S2D_RESET;
 				rst_ctr_nxt = 7'd49;
 			end
