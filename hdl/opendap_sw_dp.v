@@ -110,7 +110,7 @@ always @ (posedge swclk or negedge rst_n) begin
 		if (set_stickyorun)
 			ctrl_stat_stickyorun <= 1'b1;
 		if (set_stickyerr)
-			ctrl_stat_stickyorun <= 1'b1;
+			ctrl_stat_stickyerr <= 1'b1;
 	end
 end
 
@@ -188,19 +188,13 @@ wire hostacc_protocol_err =
 // ----------------------------------------------------------------------------
 // Serial comms unit
 
-wire any_sticky_errors = ctrl_stat_stickyorun || ctrl_stat_stickyorun || ctrl_stat_wdataerr;
+wire any_sticky_errors = ctrl_stat_stickyorun || ctrl_stat_stickyerr || ctrl_stat_wdataerr;
 
-// Access when a sticky flag is set causes a FAULT response, with the
-// exception of very few DP registers. We are decoding this straight out of
-// the serial comms' shift register, so must be combinatorial, and not a
-// function of hostacc_en.
+// AP access when a sticky flag is set causes a FAULT response. We are
+// decoding this straight out of the serial comms' shift register, so must be
+// combinatorial, and not a function of hostacc_en.
 
-assign hostacc_fault = any_sticky_errors && !(!hostacc_ap_ndp && (
-	( hostacc_r_nw && hostacc_addr == 2'b00                            ) || // DPIDR read
-	( hostacc_r_nw && hostacc_addr == 2'b01 && select_dpbanksel == 4'h0) || // CTRL/STAT read
-	(!hostacc_r_nw && hostacc_addr == 2'b00                            ) || // ABORT write
-	(!hostacc_r_nw && hostacc_addr == 2'b11                            )    // TARGETSEL write
-));
+assign hostacc_fault = any_sticky_errors && hostacc_ap_ndp;
 
 opendap_sw_dp_serial_comms serial_comms (
 	.swclk               (swclk),

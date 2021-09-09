@@ -80,6 +80,7 @@ void tb::step() {
 	// Field AP accesses using testcase callbacks if available, and provide AP
 	// bus responses with correct timing based on callback results.
 	if (!swclk_prev && dp->p_swclk.get<bool>()) {
+		dp->p_ap__err.set<bool>(0);
 		if (last_read_response.delay_cycles > 0) {
 			--last_read_response.delay_cycles;
 			if (last_read_response.delay_cycles == 0) {

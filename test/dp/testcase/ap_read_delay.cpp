@@ -1,8 +1,8 @@
 #include "tb.h"
 #include <cstdio>
 
-// Test intent: check that AP register address and APSEL make it to the AP
-// interface, and read data makes it back.
+// Test intent: check that repeated WAIT responses are generated on stalled AP
+// read with no ORUNDETECT.
 
 ap_read_response read_callback(uint16_t addr) {
 	return {
