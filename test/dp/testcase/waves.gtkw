@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
-[*] Thu Sep  9 11:12:35 2021
+[*] Thu Sep  9 17:09:17 2021
 [*]
 [dumpfile] "/home/luke/proj/opendap/test/dp/testcase/waves.vcd"
-[dumpfile_mtime] "Thu Sep  9 11:12:16 2021"
-[dumpfile_size] 20404
+[dumpfile_mtime] "Thu Sep  9 17:08:39 2021"
+[dumpfile_size] 21495
 [savefile] "/home/luke/proj/opendap/test/dp/testcase/waves.gtkw"
-[timestart] 0
+[timestart] 55
 [size] 1920 1043
 [pos] -1 -1
-*-7.000000 492 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-6.000000 500 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 233
 [signals_width] 190
 [sst_expanded] 1
@@ -49,12 +49,26 @@ hostacc_rdata[31:0]
 hostacc_wdata[31:0]
 @200
 -
-@29
-ctrl_stat_stickyerr
 @28
+ctrl_stat_stickyerr
 ctrl_stat_stickyorun
 set_stickyerr
 set_stickyorun
 serial_comms.dp_set_wdataerr
+@200
+-
+@28
+ap_ren
+ap_wen
+@22
+ap_sel[7:0]
+ap_addr[5:0]
+@28
+ap_rdy
+ap_err
+@22
+ap_wdata[31:0]
+@23
+ap_rdata[31:0]
 [pattern_trace] 1
 [pattern_trace] 0

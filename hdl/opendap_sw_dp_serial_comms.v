@@ -70,7 +70,7 @@ wire       header_ap_ndp = header_sreg[0];
 
 wire header_is_dpidr_read = !header_ap_ndp && header_r_nw && header_addr == 2'b00;
 wire header_is_targetsel_write = !header_ap_ndp && !header_r_nw && header_addr == 2'b11;
-wire header_is_resend = !header_ap_ndp && header_r_nw && header_addr == 2'b11;
+wire header_is_resend = !header_ap_ndp && header_r_nw && header_addr == 2'b10;
 
 assign bus_ap_ndp  = header_ap_ndp;
 assign bus_r_nw    = header_r_nw;
