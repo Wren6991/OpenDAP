@@ -173,7 +173,8 @@ always @ (posedge swclk or negedge rst_n) begin
 		// read, not just the last read in general. Since we are just
 		// recirculating the shift register, we need to fail a RESEND if
 		// any *other* type of read takes place since the last AP/RDBUFF
-		// read, as well as if any write takes place.
+		// read, as well as if any write takes place. Otherwise we would give
+		// the wrong data!
 		resend_possible <= hostacc_read && (hostacc_ap_ndp || hostacc_addr == 2'b11);
 	end
 end

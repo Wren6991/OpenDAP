@@ -177,6 +177,7 @@ always @ (*) begin
 					bus_en = header_r_nw;
 					if (dp_acc_protocol_err) begin
 						link_state_nxt = LINK_LOCKEDOUT;
+						swdo_en_nxt = 1'b0;
 					end else begin
 						phase_nxt = PHASE_ACK_OK;
 						swdo_nxt = 1'b1;

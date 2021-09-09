@@ -29,7 +29,7 @@ localparam [6:0]  LFSR_TAPS  = 7'b1001011;
 // this magic LFSR. We resync the LFSR whenever we see a sequence mismatch.
 
 reg  [6:0] lfsr;
-wire       lfsr_resync;
+reg        lfsr_resync;
 
 always @ (posedge swclk or negedge rst_n) begin
 	if (!rst_n) begin
