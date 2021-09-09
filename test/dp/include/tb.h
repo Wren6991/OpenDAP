@@ -40,6 +40,24 @@ enum swd_status_t {
 	DISCONNECTED = 7
 };
 
+const int DP_REG_DPIDR = 0;
+const int DP_REG_ABORT = 0;
+const int DP_REG_CTRL_STAT = 1;
+const int DP_REG_DLCR = 1;
+const int DP_REG_TARGETID = 1;
+const int DP_REG_DLPIDR = 1;
+const int DP_REG_EVENTSTAT = 1;
+const int DP_REG_RESEND = 2;
+const int DP_REG_SELECT = 2;
+const int DP_REG_RDBUF = 3;
+const int DP_REG_TARGETSEL = 3;
+
+const int DP_BANK_CTRL_STAT = 0;
+const int DP_BANK_DLCR = 1;
+const int DP_BANK_TARGETID = 2;
+const int DP_BANK_DLPIDR = 3;
+const int DP_BANK_EVENTSTAT = 4;
+
 // Convenience functions
 
 void put_bits(tb &t, const uint8_t *tx, int n_bits);

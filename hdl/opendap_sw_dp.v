@@ -139,6 +139,7 @@ always @ (*) begin
 		};
 
 		6'h11: hostacc_rdata = 32'h0000_0040; // DLCR
+
 		6'h12: hostacc_rdata = TARGETID;
 
 		6'h13: hostacc_rdata = {              // DLPIDR
@@ -152,7 +153,8 @@ always @ (*) begin
 			eventstat
 		};
 
-		6'h1z: hostacc_rdata = 32'h0000_0000; // UNPREDICTABLE
+		6'h1z: hostacc_rdata = 32'h0000_0000; // RES0
+
 		6'h2z: hostacc_rdata = 32'h0000_0000; // RESEND is handled inside the serial comms.
 
 		// Assumes AP rdata is stable (!). We may assume (B2.2.7) that the RDBUFF is

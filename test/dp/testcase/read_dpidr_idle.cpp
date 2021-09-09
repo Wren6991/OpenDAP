@@ -11,7 +11,7 @@ int main() {
 	idle_clocks(t, 100);
 
 	uint32_t id;
-	swd_status_t status = swd_read(t, DP, 0, id);
+	swd_status_t status = swd_read(t, DP, DP_REG_DPIDR, id);
 	if (status == OK) {
 		printf("OK, DPIDR = %08x\n", id);
 	}

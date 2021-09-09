@@ -272,6 +272,9 @@ always @ (*) begin
 					dp_set_wdataerr = 1'b1;
 				end else begin
 					bus_en = 1'b1;
+					if (dp_acc_protocol_err) begin
+						link_state_nxt = LINK_LOCKEDOUT;
+					end
 				end
 			end else begin
 				data_sreg_en = 1'b1;
