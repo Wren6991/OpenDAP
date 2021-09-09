@@ -25,7 +25,29 @@ private:
 
 // Convenience functions:
 
+enum ap_dp_t {
+	DP = 0,
+	AP = 1
+};
+
+enum swd_status_t {
+	OK           = 1,
+	WAIT         = 2,
+	FAULT        = 4,
+	DISCONNECTED = 7
+};
+
 void put_bits(tb &t, const uint8_t *tx, int n_bits);
 void get_bits(tb &t, uint8_t *rx, int n_bits);
-void send_dormant_to_swd(tb &t);
+void hiz_clocks(tb &t, int n_bits);
+void idle_clocks(tb &t, int n_bits);
 
+void send_dormant_to_swd(tb &t);
+void swd_line_reset(tb &t);
+
+uint8_t swd_header(ap_dp_t ap_ndp, bool read_nwrite, uint8_t addr);
+
+swd_status_t swd_read(tb &t, ap_dp_t ap_dp, uint8_t addr, uint32_t &data);
+swd_status_t swd_write(tb &t, ap_dp_t ap_dp, uint8_t addr, uint32_t data);
+swd_status_t swd_read_orun(tb &t, ap_dp_t ap_dp, uint8_t addr, uint32_t &data);
+swd_status_t swd_write_orun(tb &t, ap_dp_t ap_dp, uint8_t addr, uint32_t data);

@@ -16,7 +16,7 @@ module opendap_swd_dormant_monitor (
 
 	output reg  exit_dormant,
 	output reg  enter_dormant,
-	output wire line_reset
+	output reg  line_reset
 );
 
 // Magic numbers from the spec
@@ -42,12 +42,14 @@ always @ (posedge swclk or negedge rst_n) begin
 end
 
 localparam W_STATE = 3;
-localparam S_D2S_START_BIT = 3'd0;
-localparam S_D2S_ALERT     = 3'd1;
-localparam S_D2S_POSTALERT = 3'd2;
-localparam S_D2S_SELECT    = 3'd3;
-localparam S_S2D_RESET     = 3'd4;
-localparam S_S2D_SELECT    = 3'd5;
+localparam S_D2S_START_BIT   = 3'd0;
+localparam S_D2S_ALERT       = 3'd1;
+localparam S_D2S_POSTALERT   = 3'd2;
+localparam S_D2S_SELECT      = 3'd3;
+localparam S_S2D_RESET_HIGH  = 3'd4;
+localparam S_S2D_RESET_LOW1  = 3'd5;
+localparam S_S2D_RESET_LOW2  = 3'd6;
+localparam S_S2D_SELECT      = 3'd7;
 
 reg [6:0]         bit_ctr, bit_ctr_nxt;
 reg [5:0]         rst_ctr, rst_ctr_nxt;
@@ -60,6 +62,7 @@ always @ (*) begin
 
 	enter_dormant = 1'b0;
 	exit_dormant = 1'b0;
+	line_reset = 1'b0;
 	lfsr_resync = 1'b1;
 
 	case (state)
@@ -92,7 +95,7 @@ always @ (*) begin
 		if (swdi_reg == SELECT_D2S[bit_ctr]) begin
 			if (~|bit_ctr) begin
 				exit_dormant = 1'b1;
-				state_nxt = S_S2D_RESET;
+				state_nxt = S_S2D_RESET_HIGH;
 				rst_ctr_nxt = 7'd49;
 			end
 		end else begin
@@ -100,9 +103,29 @@ always @ (*) begin
 			state_nxt = swdi_reg ? S_D2S_START_BIT : S_D2S_ALERT;
 		end
 	end
-	S_S2D_RESET: begin
+	S_S2D_RESET_HIGH: begin
+		// Note we are using two separate counters to handle the case where a
+		// reset may be part of a partially-successful but ultimately failing
+		// dormant select sequence.
 		if (~|rst_ctr_nxt)
+			state_nxt = S_S2D_RESET_LOW1;
+	end
+	S_S2D_RESET_LOW1: begin
+		// More than 50 cycles high is legal. We sit waiting for a low.
+		if (!swdi_reg)
+			state_nxt = S_S2D_RESET_LOW2;
+	end
+	S_S2D_RESET_LOW2: begin
+		// The first low cycle must be followed by a second one, else it's not
+		// a legal reset sequence, and we need 50 cycles high again.
+		if (swdi_reg) begin
+			state_nxt = S_S2D_RESET_HIGH;
+		end else begin
+			line_reset = 1'b1;
 			state_nxt = S_S2D_SELECT;
+			// First two bits of "select" are actually the two 0 bits on reset.
+			bit_ctr_nxt = 7'd13;
+		end
 	end
 	S_S2D_SELECT: begin
 		if (swdi_reg == SELECT_S2D[bit_ctr]) begin
@@ -111,13 +134,11 @@ always @ (*) begin
 				state_nxt = S_D2S_START_BIT;
 			end
 		end else begin
-			if (~|rst_ctr && !swdi_reg) begin
-				bit_ctr_nxt = 7'd14;
-			end else if (~|rst_ctr_nxt) begin
-				bit_ctr_nxt = 7'd15;
-			end else begin
-				state_nxt = S_S2D_RESET;
-			end
+			// No match, go back to waiting for reset. (The reset counter has
+			// been tracking 1 bits in this potential select sequence the
+			// whole time, so we may now spend fewer than 50 cycles in the
+			// RESET_HIGH state.)
+			state_nxt = S_S2D_RESET_HIGH;
 		end
 	end
 	default: begin
@@ -137,7 +158,5 @@ always @ (posedge swclk or negedge rst_n) begin
 		rst_ctr <= rst_ctr_nxt;
 	end
 end
-
-assign line_reset = ~|rst_ctr_nxt;
 
 endmodule

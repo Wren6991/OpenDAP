@@ -1,39 +1,19 @@
 #include "tb.h"
-
-const uint8_t selection_alert[16] = {
-	0x92, 0xf3, 0x09, 0x62,
-	0x95, 0x2d, 0x85, 0x86,
-	0xe9, 0xaf, 0xdd, 0xe3,
-	0xa2, 0x0e, 0xbc, 0x19
-};
-
-const uint8_t dpidr_read[6] = {
-	0xa5, 0x00, 0x00, 0x00, 0x00, 0x00
-};
+#include <cstdio>
 
 int main() {
 	tb t("read_dpidr.vcd");
-	uint8_t c = 0xff;
-	put_bits(t, &c, 8);
-	put_bits(t, selection_alert, 128);
-	c = 0;
-	put_bits(t, &c, 4);
-	c = 0x1a;
-	put_bits(t, &c, 8);
-	c = 0;
-	put_bits(t, &c, 8);
-	c = 0xff;
-	put_bits(t, &c, 8);
-	put_bits(t, &c, 8);
-	put_bits(t, &c, 8);
-	put_bits(t, &c, 8);
-	put_bits(t, &c, 8);
-	put_bits(t, &c, 8);
-	c = 0x03;
-	put_bits(t, &c, 8);
+	send_dormant_to_swd(t);
+	swd_line_reset(t);
+	uint32_t id;
+	swd_status_t status = swd_read(t, DP, 0, id);
 
-	// Now in reset state.
-	put_bits(t, dpidr_read, 48);
-
-	return 0;
+	if (status == OK) {
+		printf("OK, DPIDR = %08x\n", id);
+		return 0;
+	}
+	else {
+		printf("Status: %d\n", status);
+		return -1;
+	}
 }
