@@ -28,10 +28,8 @@
 	input  wire        eventstat,
 
 	// AP Interface:
-	// - sel, addr are valid only on the cycle where wen/ren is asserted.
+	// - sel, addr and wdata are valid only on the cycle where wen/ren is asserted.
 	// - AP may then take rdy low for arbitrarily many cycles.
-	// - wdata remains valid from the cycle wen is asserted until the cycle
-	//   after rdy goes high.
 	// - rdata must be valid from the first cycle rdy goes high after a ren,
 	//   until the next time ren/wen is asserted.
 	// - err may go high only on the first cycle rdy is high after a ren/wen.

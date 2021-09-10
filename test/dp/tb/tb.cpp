@@ -75,6 +75,7 @@ void tb::step() {
 	dp->step();
 	vcd.sample(vcd_sample++);
 	waves_fd << vcd.buffer;
+	waves_fd.flush();
 	vcd.buffer.clear();
 
 	// Field AP accesses using testcase callbacks if available, and provide AP
@@ -89,7 +90,7 @@ void tb::step() {
 				dp->p_ap__rdy.set<bool>(1);
 			}
 		}
-		else if (last_write_response.delay_cycles > 0) {
+		if (last_write_response.delay_cycles > 0) {
 			--last_write_response.delay_cycles;
 			if (last_write_response.delay_cycles > 0) {
 				dp->p_ap__err.set<bool>(last_write_response.err);
@@ -233,13 +234,13 @@ void swd_targetsel(tb &t, uint32_t id) {
 }
 
 
-swd_status_t swd_read(tb &t, ap_dp_t ap_ndp, uint8_t addr, uint32_t &data) {
+static inline swd_status_t swd_read_impl(tb &t, ap_dp_t ap_ndp, uint8_t addr, uint32_t &data, bool orundetect) {
 	uint8_t header = swd_header(ap_ndp, 1, addr);
 	put_bits(t, &header, 8);
 	hiz_clocks(t, 1);
 	uint8_t status;
 	get_bits(t, &status, 3);
-	if (status != OK) {
+	if (status != OK && !orundetect) {
 		hiz_clocks(t, 1);
 		data = 0;
 		return (swd_status_t)status;
@@ -256,13 +257,13 @@ swd_status_t swd_read(tb &t, ap_dp_t ap_ndp, uint8_t addr, uint32_t &data) {
 	return (swd_status_t)status;
 }
 
-swd_status_t swd_write(tb &t, ap_dp_t ap_ndp, uint8_t addr, uint32_t data) {
+static inline swd_status_t swd_write_impl(tb &t, ap_dp_t ap_ndp, uint8_t addr, uint32_t data, bool orundetect) {
 	uint8_t header = swd_header(ap_ndp, 0, addr);
 	put_bits(t, &header, 8);
 	hiz_clocks(t, 1);
 	uint8_t status;
 	get_bits(t, &status, 3);
-	if (status != OK) {
+	if (status != OK && !orundetect) {
 		hiz_clocks(t, 1);
 		data = 0;
 		return (swd_status_t)status;
@@ -278,4 +279,20 @@ swd_status_t swd_write(tb &t, ap_dp_t ap_ndp, uint8_t addr, uint32_t data) {
 		txbuf[0] ^= (data >> i) & 0x1;
 	put_bits(t, txbuf, 1);
 	return (swd_status_t)status;
+}
+
+swd_status_t swd_read(tb &t, ap_dp_t ap_ndp, uint8_t addr, uint32_t &data) {
+	return swd_read_impl(t, ap_ndp, addr, data, false);
+}
+
+swd_status_t swd_read_orun(tb &t, ap_dp_t ap_ndp, uint8_t addr, uint32_t &data) {
+	return swd_read_impl(t, ap_ndp, addr, data, true);
+}
+
+swd_status_t swd_write(tb &t, ap_dp_t ap_ndp, uint8_t addr, uint32_t data) {
+	return swd_write_impl(t, ap_ndp, addr, data, false);
+}
+
+swd_status_t swd_write_orun(tb &t, ap_dp_t ap_ndp, uint8_t addr, uint32_t data) {
+	return swd_write_impl(t, ap_ndp, addr, data, true);
 }

@@ -8,7 +8,7 @@ all: $(TESTS_RUN)
 
 build/%: %.cpp ../tb/tb.o
 	mkdir -p build
-	clang++ -O3 -std=c++14 -I ../include -I $(shell yosys-config --datdir)/include $< ../tb/tb.o -o $@
+	clang++ -O0 -std=c++14 -Wall -Wextra -I ../include -I $(shell yosys-config --datdir)/include $< ../tb/tb.o -o $@
 
 run.%: build/%
 	./$<
