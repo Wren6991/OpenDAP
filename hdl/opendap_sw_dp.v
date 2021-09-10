@@ -77,7 +77,7 @@ always @ (posedge swclk or negedge rst_n) begin
 		select_apsel <= 8'h0;
 		select_apbanksel <= 4'h0;
 		select_dpbanksel <= 4'h0;
-	end else if (hostacc_write && hostacc_addr == 2'b10) begin
+	end else if (hostacc_write && !hostacc_ap_ndp && hostacc_addr == 2'b10) begin
 		select_apsel <= hostacc_wdata[31:24];
 		select_apbanksel <= hostacc_wdata[7:4];
 		select_dpbanksel <= hostacc_wdata[3:0];
@@ -102,13 +102,13 @@ always @ (posedge swclk or negedge rst_n) begin
 		ctrl_stat_stickyorun <= 1'b0;
 		ctrl_stat_wdataerr <= 1'b0;
 	end else begin
-		if (hostacc_write && hostacc_addr == 2'b00) begin
+		if (hostacc_write && !hostacc_ap_ndp && hostacc_addr == 2'b00) begin
 			// ABORT write
 			ctrl_stat_stickyorun <= ctrl_stat_stickyorun && !hostacc_wdata[4];
 			ctrl_stat_wdataerr <= ctrl_stat_wdataerr && !hostacc_wdata[3];
 			ctrl_stat_stickyerr <= ctrl_stat_stickyerr && !hostacc_wdata[2];
 		end
-		if (hostacc_write && hostacc_addr == 2'b01 && select_dpbanksel == 4'h0) begin
+		if (hostacc_write && !hostacc_ap_ndp && hostacc_addr == 2'b01 && select_dpbanksel == 4'h0) begin
 			// CTRL/STAT write
 			ctrl_stat_csyspwrupreq <= hostacc_wdata[30];
 			ctrl_stat_cdbgpwrupreq <= hostacc_wdata[28];
