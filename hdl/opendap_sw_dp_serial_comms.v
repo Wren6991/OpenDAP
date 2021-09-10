@@ -28,6 +28,7 @@
 
 	output reg         dp_set_wdataerr,
 	output reg         dp_set_stickyorun,
+	output reg         dp_clear_readok,
 	input  wire        dp_orundetect,
 	input  wire        dp_acc_fault,
 	input  wire        dp_acc_protocol_err,
@@ -71,6 +72,7 @@ wire       header_ap_ndp = header_sreg[0];
 wire header_is_dpidr_read = !header_ap_ndp && header_r_nw && header_addr == 2'b00;
 wire header_is_targetsel_write = !header_ap_ndp && !header_r_nw && header_addr == 2'b11;
 wire header_is_resend = !header_ap_ndp && header_r_nw && header_addr == 2'b10;
+wire header_modifies_readok = header_r_nw && (header_ap_ndp || header_addr == 2'b11);
 
 assign bus_ap_ndp  = header_ap_ndp;
 assign bus_r_nw    = header_r_nw;
@@ -118,6 +120,7 @@ always @ (*) begin
 	bus_en = 1'b0;
 	dp_set_wdataerr = 1'b0;
 	dp_set_stickyorun = 1'b0;
+	dp_clear_readok = 1'b0;
 
 	swdo_nxt = 1'b0;
 	swdo_en_nxt = 1'b0;
@@ -166,13 +169,14 @@ always @ (*) begin
 				swdo_en_nxt = 1'b1;
 				bit_ctr_nxt = 6'd2;
 				if (dp_acc_fault) begin
-					// This depends on the sticky error status, the packet header, *and* the value
-					// of DPBANKSEL, so we rely on the DP to decode faults.
+					// DP signals fault on AP access with any sticky flag set.
 					phase_nxt = PHASE_ACK_FAULT;
 					dp_set_stickyorun = dp_orundetect;
+					dp_clear_readok = header_modifies_readok;
 				end else if (!ap_rdy) begin
 					phase_nxt = PHASE_ACK_WAIT;
 					dp_set_stickyorun = dp_orundetect;
+					dp_clear_readok = header_modifies_readok;
 				end else begin
 					bus_en = header_r_nw;
 					if (dp_acc_protocol_err) begin

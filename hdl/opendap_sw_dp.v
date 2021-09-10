@@ -27,19 +27,27 @@
 	input  wire [3:0]  instid,
 	input  wire        eventstat,
 
+	// AP Interface:
+	// - sel, addr are valid only on the cycle where wen/ren is asserted.
+	// - AP may then take rdy low for arbitrarily many cycles.
+	// - wdata remains valid from the cycle wen is asserted until the cycle
+	//   after rdy goes high.
+	// - rdata must be valid from the first cycle rdy goes high after a ren,
+	//   until the next time ren/wen is asserted.
+	// - err may go high only on the first cycle rdy is high after a ren/wen.
+	// - when abort is asserted, rdy must go high on the next cycle.
 	output wire [7:0]  ap_sel,
 	output wire [5:0]  ap_addr,
 	output wire [31:0] ap_wdata,
+
 	output wire        ap_wen,
-	input  wire [31:0] ap_rdata,
 	output wire        ap_ren,
+	output wire        ap_abort,
+
+	input  wire [31:0] ap_rdata,
 	input  wire        ap_rdy,
 	input  wire        ap_err
 );
-
-wire        set_wdataerr;
-wire        set_stickyorun;
-wire        set_stickyerr = ap_rdy && ap_err;
 
 wire [1:0]  hostacc_addr;
 wire        hostacc_r_nw;
@@ -53,6 +61,11 @@ wire        hostacc_write = hostacc_en && !hostacc_fault && !hostacc_r_nw;
 wire        hostacc_read  = hostacc_en && !hostacc_fault &&  hostacc_r_nw;
 			/// TODO DAPABORT!
 
+wire        set_wdataerr;
+wire        set_stickyorun;
+wire        set_stickyerr = ap_rdy && ap_err;
+wire        set_readok = hostacc_read && (hostacc_ap_ndp || hostacc_addr == 2'b11);
+wire        clear_readok; // driven by DP
 // ----------------------------------------------------------------------------
 // DP register file
 
@@ -90,7 +103,6 @@ always @ (posedge swclk or negedge rst_n) begin
 		ctrl_stat_stickyorun <= 1'b0;
 		ctrl_stat_wdataerr <= 1'b0;
 	end else begin
-		// TODO READOK
 		if (hostacc_write && hostacc_addr == 2'b00) begin
 			// ABORT write
 			ctrl_stat_stickyorun <= ctrl_stat_stickyorun && !hostacc_wdata[4];
@@ -111,6 +123,7 @@ always @ (posedge swclk or negedge rst_n) begin
 			ctrl_stat_stickyorun <= 1'b1;
 		if (set_stickyerr)
 			ctrl_stat_stickyerr <= 1'b1;
+		ctrl_stat_readok <= (ctrl_stat_readok || set_readok) && !clear_readok;
 	end
 end
 
@@ -125,15 +138,15 @@ always @ (*) begin
 			ctrl_stat_csyspwrupreq,
 			cdbgpwrupack,
 			ctrl_stat_cdbgpwrupreq,
-			2'b00,                  // CDBGRSTACK/CDBGRSTREQ
-			2'b00,                  // RES0
-			12'h0,                  // TRNCOUNT
-			4'h0,                   // MASKLANE
+			2'b00,                            // CDBGRSTACK/CDBGRSTREQ
+			2'b00,                            // RES0
+			12'h0,                            // TRNCOUNT
+			4'h0,                             // MASKLANE
 			ctrl_stat_wdataerr,
 			ctrl_stat_readok,
 			ctrl_stat_stickyerr,
-			1'b0,                   // STICKYCMP
-			2'b00,                  // TRNMODE
+			1'b0,                             // STICKYCMP
+			2'b00,                            // TRNMODE
 			ctrl_stat_stickyorun,
 			ctrl_stat_orundetect
 		};
@@ -157,8 +170,6 @@ always @ (*) begin
 
 		6'h2z: hostacc_rdata = 32'h0000_0000; // RESEND is handled inside the serial comms.
 
-		// Assumes AP rdata is stable (!). We may assume (B2.2.7) that the RDBUFF is
-		// immediately preceded by the corresponding AP read.
 		6'h3z: hostacc_rdata = ap_rdata;      // RDBUFF
 	endcase
 end
@@ -214,6 +225,7 @@ opendap_sw_dp_serial_comms serial_comms (
 	.targetsel_expected  ({instid, TARGETID[27:0]}),
 	.dp_set_wdataerr     (set_wdataerr),
 	.dp_set_stickyorun   (set_stickyorun),
+	.dp_clear_readok     (clear_readok),
 	.dp_orundetect       (ctrl_stat_orundetect),
 	.dp_acc_fault        (hostacc_fault),
 	.dp_acc_protocol_err (hostacc_protocol_err),
