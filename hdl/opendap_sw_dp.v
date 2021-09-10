@@ -59,7 +59,6 @@ wire        hostacc_fault;
 
 wire        hostacc_write = hostacc_en && !hostacc_fault && !hostacc_r_nw;
 wire        hostacc_read  = hostacc_en && !hostacc_fault &&  hostacc_r_nw;
-			/// TODO DAPABORT!
 
 wire        set_wdataerr;
 wire        set_stickyorun;
@@ -240,12 +239,8 @@ assign ap_ren = hostacc_read && hostacc_ap_ndp;
 assign ap_sel = select_apsel;
 assign ap_addr = {select_apbanksel, hostacc_addr};
 assign ap_wdata = hostacc_wdata;
-
-
-// TODO ap register number will be unstable. We might have to pull the
-// AP->data_sreg sampling forward by one cycle, just ahead of the next
-// hostacc_read, and then add some flops to keep the 2 LSBs stable up til
-// this point. The rest of it is fine -- SELECT can't be accessed in between
-// the read issue and read data sampling.
+// DAPABORT is lsb of the ABORT register. When we assert this flag, rdy must
+// be asserted high on the next cycle.
+assign ap_abort = hostacc_write && !hostacc_ap_ndp && hostacc_addr == 2'b00 && hostacc_wdata[0];
 
 endmodule
