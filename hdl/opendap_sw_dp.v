@@ -180,12 +180,20 @@ always @ (posedge swclk or negedge rst_n) begin
 		resend_possible <= 1'b0;
 	end else if (hostacc_en) begin
 		// B2.2.8 says RESEND returns specifically the last AP read or RDBUFF
-		// read, not just the last read in general. Since we are just
-		// recirculating the shift register, we need to fail a RESEND if
-		// any *other* type of read takes place since the last AP/RDBUFF
-		// read, as well as if any write takes place. Otherwise we would give
-		// the wrong data!
-		resend_possible <= hostacc_read && (hostacc_ap_ndp || hostacc_addr == 2'b11);
+		// read, not just the last read in general.
+		//
+		// Since we are just recirculating the shift register, we need to fail
+		// a RESEND if any *other* type of read takes place since the last
+		// AP/RDBUFF read, as well as if any write takes place. Otherwise we
+		// would give the wrong data!
+		//
+		// (RESEND is the only other exception -- we can repeatedly send the
+		// same data as many times as the host likes.)
+		resend_possible <= hostacc_read && (
+			hostacc_ap_ndp ||        // AP read
+			hostacc_addr == 2'b11 || // RDBUFF
+			hostacc_addr == 2'b10    // RESEND
+		);
 	end
 end
 
