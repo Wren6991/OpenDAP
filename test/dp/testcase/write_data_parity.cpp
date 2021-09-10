@@ -27,30 +27,17 @@ int main() {
 	// write, as a sticky flag is set.
 	swd_status_t ack = swd_write(t, AP, 0, 0);
 
-	if (ack != FAULT) {
-		printf("Should get FAULT after write parity error.\n");
-		return -1;
-	}
+	tb_assert(ack == FAULT, "Should get FAULT after write parity error.\n");
 
 	// Check the correct error flag is set in CTRL/STAT.
 	uint32_t ctrl_stat = 0;
 	ack = swd_read(t, DP, 1, ctrl_stat);
-	if (ack != OK) {
-		printf("CTRL/STAT read failed\n");
-		return -1;
-	}
-	printf("CTRL/STAT %08x\n", ctrl_stat);
-	if (!(ctrl_stat & 0x80)) {
-		printf("WDATAERR not set.\n");
-		return -1;
-	}
+	tb_assert(ack == OK, "CTRL/STAT read failed\n");
+	tb_assert(ctrl_stat & 0x80, "WDATAERR not set.\n");
 
 	ack = swd_write(t, DP, 0, 0x8);
 	ack = swd_read(t, DP, 1, ctrl_stat);
-	printf("CTRL/STAT %08x\n", ctrl_stat);
-
-	if (ack != OK || ctrl_stat & 0x80)
-		return -1;
+	tb_assert(ack == OK && !(ctrl_stat & 0x80), "Bad CTRL/STAT after WDATAERR clear\n")
 
 	return 0;
 }

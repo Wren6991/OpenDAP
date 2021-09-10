@@ -11,5 +11,6 @@ int main() {
 	uint32_t id;
 	swd_status_t status = swd_read(t, DP, DP_REG_DPIDR, id);
 
-	return status == DISCONNECTED ? 0 : -1;
+	tb_assert(status == DISCONNECTED, "Should not get any response when in dormant state\n");
+	return 0;
 }

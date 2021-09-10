@@ -50,36 +50,18 @@ int main() {
 
 	idle_clocks(t, 100);
 	status = swd_read(t, AP, 0, data);
-	if (status != FAULT) {
-		printf("Failed AP access should give FAULT.\n");
-		return -1;
-	}
+	tb_assert(status == FAULT, "Failed AP access should give FAULT.\n");
 
 	status = swd_write(t, DP, DP_REG_SELECT, DP_BANK_CTRL_STAT);
-	if (status != OK) {
-		printf("Should never get FAULT on SELECT\n");
-		return -1;
-	}
+	tb_assert(status == OK, "Should never get FAULT on SELECT\n");
 	status = swd_read(t, DP, DP_REG_CTRL_STAT, data);
-	if (status != OK) {
-		printf("Should never get FAULT on CTRL/STAT read\n");
-		return -1;
-	}
-	if (!(data & 0x20)) {
-		printf("STICKYERR should be set.\n");
-		return -1;
-	}
-	if (data & 0x92) {
-		printf("No other sticky flags should be set.\n");
-		return -1;
-	}
+	tb_assert(status == OK, "Should never get FAULT on CTRL/STAT read\n");
+	tb_assert(data & 0x20, "STICKYERR should be set.\n");
+	tb_assert(!(data & 0x92), "No other sticky flags should be set.\n");
 
 	(void)swd_write(t, DP, DP_REG_ABORT, 0x4);
 	status = swd_read(t, DP, DP_REG_CTRL_STAT, data);
-	if (status != OK || data & 0x20) {
-		printf("STICKYERR should be cleared by ABORT\n");
-		return -1;
-	}
+	tb_assert(status == OK && !(data & 0x20), "STICKYERR should be cleared by ABORT\n");
 
 	(void)swd_read(t, AP, 0, data);
 	status = swd_read(t, DP, DP_REG_RDBUF, data);
@@ -87,9 +69,6 @@ int main() {
 	// The reads return a count sequence from 123 (including the first failing
 	// write). +1 confirms the AP didn't see any reads between the faulting
 	// one and this one.
-	if (status != OK || data != 123 + 1) {
-		printf("Bad final readback\n");
-		return -1;
-	}
+	tb_assert(status == OK && data == 123 + 1, "Bad final readback\n");
 	return 0;
 }

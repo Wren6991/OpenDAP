@@ -12,10 +12,6 @@ int main() {
 	uint32_t id;
 	swd_status_t status = swd_read(t, DP, DP_REG_DPIDR, id);
 	status = swd_read(t, DP, DP_REG_RESEND, id);
-	if (status != DISCONNECTED) {
-		printf("Should get immediate protocol error on bad RESEND\n");
-		return -1;
-	}
-
+	tb_assert(status == DISCONNECTED, "Should get immediate protocol error on bad RESEND\n");
 	return 0;
 }

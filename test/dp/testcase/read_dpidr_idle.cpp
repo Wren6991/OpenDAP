@@ -12,9 +12,7 @@ int main() {
 
 	uint32_t id;
 	swd_status_t status = swd_read(t, DP, DP_REG_DPIDR, id);
-	if (status == OK) {
-		printf("OK, DPIDR = %08x\n", id);
-	}
-
-	return status == OK && id == DPIDR_EXPECTED ? 0 : -1;
+	tb_assert(status == OK, "Bad status: %d\n", (int)status);
+	tb_assert(id == DPIDR_EXPECTED, "Bad DPIDR: %08x\n", id);
+	return 0;
 }

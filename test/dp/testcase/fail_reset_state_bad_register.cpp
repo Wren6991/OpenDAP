@@ -13,5 +13,6 @@ int main() {
 	swd_status_t status = swd_write(t, DP, 0, data);
 
 	// DP should immediately drop off the bus, we see three ones due to the parking.
-	return status == DISCONNECTED ? 0 : -1;
+	tb_assert(status == DISCONNECTED, "Should get no response to bad access in reset state");
+	return 0;
 }

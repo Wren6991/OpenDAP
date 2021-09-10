@@ -15,10 +15,7 @@ int main() {
 
 	uint32_t id;
 	swd_status_t status = swd_read(t, DP, DP_REG_DPIDR, id);
-	if (status != OK || id != DPIDR_EXPECTED) {
-		printf("Failed to go to SWD state\n");
-		return -1;
-	}
+	tb_assert(status == OK && id == DPIDR_EXPECTED, "Failed to go to SWD state\n");
 
 	put_bits(t, swd_to_dormant, 72);
 
@@ -26,19 +23,13 @@ int main() {
 	for (int i = 0; i < 5; ++i) {
 		swd_line_reset(t);
 		status = swd_read(t, DP, DP_REG_DPIDR, id);
-		if (status != DISCONNECTED) {
-			printf("Failed to return to dormant state\n");
-			return -1;
-		}
+		tb_assert(status == DISCONNECTED, "Failed to return to dormant state\n");
 	}
 
 	// We can wake it up again with the magic sequence
 	send_dormant_to_swd(t);
 	swd_line_reset(t);
 	status = swd_read(t, DP, DP_REG_DPIDR, id);
-	if (status != OK || id != DPIDR_EXPECTED) {
-		printf("Failed to re-enter SWD state after issuing SWD-to-Dormant\n");
-		return -1;
-	}
+	tb_assert(status == OK && id == DPIDR_EXPECTED, "Failed to re-enter SWD state after issuing SWD-to-Dormant\n");
 	return 0;
 }

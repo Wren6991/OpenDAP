@@ -30,10 +30,10 @@ int main() {
 				(void)swd_write(t, DP, DP_REG_SELECT, apsel << 24 | bank << 4);
 				(void)swd_read(t, AP, reg, data);
 				status = swd_read(t, DP, DP_REG_RDBUF, data);
-				if (status != OK || data != (reg | bank << 2 | apsel << 6)) {
-					printf("Bad response, got %08x for APSEL=%u APBANKSEL=%u A[3:2]=%u\n", data, apsel, bank, reg);
-					return -1;
-				}
+				tb_assert(status == OK && data == (reg | bank << 2 | apsel << 6),
+					"Bad response, got %08x for APSEL=%u APBANKSEL=%u A[3:2]=%u\n",
+					data, apsel, bank, reg
+				);
 			}
 		}
 	}

@@ -30,15 +30,9 @@ int main() {
 	int n_pipelined_reads = 10;
 	for (int i = 0; i < n_pipelined_reads; ++i) {
 		(void)swd_read(t, AP, 0, data);
-		if ((int)data != 123 + i) {
-			printf("Bad data %d for sequence number %d\n", (int)data, i);
-			return -1;
-		}
+		tb_assert((int)data == 123 + i, "Bad data %d for sequence number %d\n", (int)data, i);
 	}
 	(void)swd_read(t, DP, DP_REG_RDBUF, data);
-	if (data != 123 + n_pipelined_reads) {
-		printf("Bad data at end.\n");
-		return -1;
-	}
+	tb_assert(data == 123 + n_pipelined_reads, "Bad data at end.\n");
 	return 0;
 }

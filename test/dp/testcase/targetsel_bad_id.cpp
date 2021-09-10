@@ -11,5 +11,6 @@ int main() {
 	swd_targetsel(t, (TARGETID_EXPECTED & 0x0fffffffu) | 0x80000000u);
 	uint32_t id;
 	swd_status_t status = swd_read(t, DP, 0, id);
-	return status == DISCONNECTED ? 0 : -1;
+	tb_assert(status == DISCONNECTED, "Should get no response after bad TARGETSEL\n");
+	return 0;
 }

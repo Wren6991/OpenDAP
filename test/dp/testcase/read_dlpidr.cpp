@@ -14,16 +14,10 @@ int main() {
 	data = DP_BANK_DLPIDR;
 	(void)swd_write(t, DP, DP_REG_SELECT, data);
 	(void)swd_read(t, DP, DP_REG_DLPIDR, data);
-	if (data != 0x00000001) {
-		printf("Bad DLPIDR initial value\n");
-		return -1;
-	}
+	tb_assert(data == 0x00000001, "Bad DLPIDR initial value\n");
 
 	t.set_instid(0xf);
 	(void)swd_read(t, DP, DP_REG_DLPIDR, data);
-	if (data != 0xf0000001) {
-		printf("DLPIDR failed to respond to INSTID\n");
-		return -1;
-	}
+	tb_assert(data == 0xf0000001, "DLPIDR failed to respond to INSTID\n");
 	return 0;
 }

@@ -14,19 +14,13 @@ int main() {
 		swd_targetsel(t, (TARGETID_EXPECTED & 0x0fffffffu) | (uint32_t)i << 28);
 		uint32_t id;
 		swd_status_t status = swd_read(t, DP, 0, id);
-		if (!(status == OK && id == DPIDR_EXPECTED)) {
-			printf("Failed to select with instid %d\n", i);
-			return -1;
-		}
+		tb_assert(status == OK && id == DPIDR_EXPECTED, "Failed to select with instid %d\n", i);
 	}
 
 	swd_line_reset(t);
 	swd_targetsel(t, TARGETID_EXPECTED & 0x0fffffffu);
 	uint32_t id;
 	swd_status_t status = swd_read(t, DP, 0, id);
-	if (status != DISCONNECTED) {
-		printf("Failed to fail\n");
-		return -1;
-	}
+	tb_assert(status == DISCONNECTED, "Failed to fail\n");
 	return 0;
 }

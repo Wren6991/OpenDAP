@@ -32,27 +32,16 @@ int main() {
 
 	uint32_t id;
 	swd_status_t status = swd_read(t, DP, 0, id);
-	if (status != DISCONNECTED) {
-		printf("DPIDR read should fail after bad TARGETSEL\n");
-		return -1;
-	}
+	tb_assert(status == DISCONNECTED, "DPIDR read should fail after bad TARGETSEL\n");
 
 	swd_line_reset(t);
 	swd_targetsel(t, TARGETID_EXPECTED & 0x0fffffffu);
 	status = swd_read(t, DP, 0, id);
-	if (status != OK || id != DPIDR_EXPECTED) {
-		printf("Couldn't reconnect after bad TARGETSEL\n");
-		return -1;
-	}
+	tb_assert(status == OK && id == DPIDR_EXPECTED, "Couldn't reconnect after bad TARGETSEL\n");
 
 	uint32_t stat;
 	status = swd_read(t, DP, 1, stat);
-	printf("CTRL/STAT value %08x\n", stat);
-
-	if (status != OK || stat & 0x80) {
-		printf("Didn't see expected STAT value.\n");
-		return -1;
-	}
+	tb_assert(status == OK && !(stat & 0x80), "Didn't see expected STAT value.\n");
 
 	return 0;
 
