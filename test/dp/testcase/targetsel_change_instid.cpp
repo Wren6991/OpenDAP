@@ -11,7 +11,7 @@ int main() {
 	for (int i = 0; i < 16; ++i) {
 		t.set_instid(i);
 		swd_line_reset(t);
-		swd_targetsel(t, TARGETID_EXPECTED & 0x0fffffffu | (uint32_t)i << 28);
+		swd_targetsel(t, (TARGETID_EXPECTED & 0x0fffffffu) | (uint32_t)i << 28);
 		uint32_t id;
 		swd_status_t status = swd_read(t, DP, 0, id);
 		if (!(status == OK && id == DPIDR_EXPECTED)) {
