@@ -54,6 +54,7 @@ wire [31:0] hostacc_wdata;
 wire        hostacc_en;
 reg  [31:0] hostacc_rdata;
 wire        hostacc_fault;
+wire        hostacc_wait;
 
 wire        hostacc_write = hostacc_en && !hostacc_fault && !hostacc_r_nw;
 wire        hostacc_read  = hostacc_en && !hostacc_fault &&  hostacc_r_nw;
@@ -62,7 +63,8 @@ wire        set_wdataerr;
 wire        set_stickyorun;
 wire        set_stickyerr = ap_rdy && ap_err;
 wire        set_readok = hostacc_read && (hostacc_ap_ndp || hostacc_addr == 2'b11);
-wire        clear_readok; // driven by DP
+wire        clear_readok; // driven by serial unit
+
 // ----------------------------------------------------------------------------
 // DP register file
 
@@ -204,6 +206,16 @@ wire any_sticky_errors = ctrl_stat_stickyorun || ctrl_stat_stickyerr || ctrl_sta
 
 assign hostacc_fault = any_sticky_errors && hostacc_ap_ndp;
 
+// When AP is not ready, all AP accesses get WAIT response, and most DP
+// accesses. See B4.2.3 for the list of exceptions, or B4.2.8 for a summary
+// of all responses.
+
+assign hostacc_wait = !(ap_rdy || !hostacc_ap_ndp && (
+	 hostacc_r_nw && hostacc_addr == 2'b00 ||                          // DPIDR read
+	!hostacc_r_nw && hostacc_addr == 2'b00 ||                          // ABORT write
+	 hostacc_r_nw && hostacc_addr == 2'b01 && select_dpbanksel == 4'h0 // C/S   read
+));
+
 opendap_sw_dp_serial_comms serial_comms (
 	.swclk               (swclk),
 	.rst_n               (rst_n),
@@ -226,7 +238,7 @@ opendap_sw_dp_serial_comms serial_comms (
 	.dp_orundetect       (ctrl_stat_orundetect),
 	.dp_acc_fault        (hostacc_fault),
 	.dp_acc_protocol_err (hostacc_protocol_err),
-	.ap_rdy              (ap_rdy)
+	.dp_acc_wait         (hostacc_wait)
 );
 
 // ----------------------------------------------------------------------------

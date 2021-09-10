@@ -44,7 +44,7 @@ int main() {
 	status = swd_read_orun(t, AP, 0, data);
 	tb_assert(status == FAULT, "Second read on stall should FAULT\n");
 	status = swd_read_orun(t, DP, DP_REG_CTRL_STAT, data);
-	tb_assert(status == WAIT, "CTRL/STAT read during stall + overrun should give WAIT, not FAULT\n");
+	tb_assert(status == OK, "CTRL/STAT read during stall + overrun should still give OK\n");
 
 	idle_clocks(t, 500);
 	status = swd_read_orun(t, DP, DP_REG_CTRL_STAT, data);

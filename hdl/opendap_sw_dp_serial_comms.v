@@ -32,7 +32,7 @@
 	input  wire        dp_orundetect,
 	input  wire        dp_acc_fault,
 	input  wire        dp_acc_protocol_err,
-	input  wire        ap_rdy
+	input  wire        dp_acc_wait
 );
 
 reg swdi_reg;
@@ -69,10 +69,10 @@ wire [1:0] header_addr   = header_sreg[3:2];
 wire       header_r_nw   = header_sreg[1];
 wire       header_ap_ndp = header_sreg[0];
 
-wire header_is_dpidr_read = !header_ap_ndp && header_r_nw && header_addr == 2'b00;
+wire header_is_dpidr_read      = !header_ap_ndp &&  header_r_nw && header_addr == 2'b00;
 wire header_is_targetsel_write = !header_ap_ndp && !header_r_nw && header_addr == 2'b11;
-wire header_is_resend = !header_ap_ndp && header_r_nw && header_addr == 2'b10;
-wire header_modifies_readok = header_r_nw && (header_ap_ndp || header_addr == 2'b11);
+wire header_is_resend          = !header_ap_ndp &&  header_r_nw && header_addr == 2'b10;
+wire header_modifies_readok    =  header_r_nw && (header_ap_ndp || header_addr == 2'b11);
 
 assign bus_ap_ndp  = header_ap_ndp;
 assign bus_r_nw    = header_r_nw;
@@ -173,7 +173,7 @@ always @ (*) begin
 					phase_nxt = PHASE_ACK_FAULT;
 					dp_set_stickyorun = dp_orundetect;
 					dp_clear_readok = header_modifies_readok;
-				end else if (!ap_rdy) begin
+				end else if (dp_acc_wait) begin
 					phase_nxt = PHASE_ACK_WAIT;
 					dp_set_stickyorun = dp_orundetect;
 					dp_clear_readok = header_modifies_readok;

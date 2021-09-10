@@ -62,14 +62,16 @@ int main() {
 	(void)swd_write(t, DP, DP_REG_ABORT, 0x4);
 	status = swd_read(t, AP, 0, data);
 	tb_assert(status == OK, "AP read should return to OK after ABORT\n");
+
+	status = swd_read(t, DP, DP_REG_CTRL_STAT, data);
+	tb_assert(status == OK, "CTRL/STAT read should not WAIT even when AP stalled\n");
+	tb_assert(data & READOK_MASK, "READOK should still be set if AP is stalled but no WAIT has been issued\n");
+
 	status = swd_read(t, DP, DP_REG_RDBUF, data);
 	tb_assert(status == WAIT, "RDBUF should WAIT on stall.\n");
-	// See B3.4.3 on wait response to DPACC
-	status = swd_read(t, DP, DP_REG_CTRL_STAT, data);
-	tb_assert(status == WAIT, "CTRL/STAT read should also WAIT when AP stalled\n");
 	idle_clocks(t, 500);
 	status = swd_read(t, DP, DP_REG_CTRL_STAT, data);
-	tb_assert(status == OK, "CTRL/STAT should become readable when WAIT clears\n");
+	tb_assert(status == OK, "CTRL/STAT should still be readable when WAIT clears\n");
 	tb_assert(!(data & READOK_MASK), "READOK should be cleared by RDBUF WAIT\n");
 
 	return 0;
