@@ -7,10 +7,6 @@
 
 std::vector<uint64_t> write_history;
 
-// Only a short delay is required to get a WAIT, because we can't kick
-// off the write until we see all the data and a good parity bit, but
-// we need to start the response phase for the next write immediately
-// after getting the packet header.
 ap_write_response write_callback(uint16_t addr, uint32_t data) {
 	write_history.push_back((uint64_t)addr << 32 | data);
 	return {
@@ -72,7 +68,7 @@ int main() {
 	status = swd_read_orun(t, DP, DP_REG_CTRL_STAT, data);
 	tb_assert(status == OK && !(data & MASK_STICKYORUN), "STICKYORUN clear failed\n");
 
-	idle_clocks(t, 500);
+	idle_clocks(t, 200);
 
 	status = swd_write_orun(t, AP, ctr & 0x3, magic + ctr);
 	expected_write_seq.push_back((uint64_t)(ctr & 0x3) << 32 | magic + ctr);
