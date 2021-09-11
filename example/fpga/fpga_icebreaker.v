@@ -58,7 +58,7 @@ wire        ap_wen;
 wire        ap_ren;
 wire        ap_abort;
 
-wire [31:0] ap_rdata = 32'h12345678;
+wire [31:0] ap_rdata = 32'h0;
 wire        ap_rdy = 1'b1;
 wire        ap_err = 1'b0;;
 
