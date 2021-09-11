@@ -92,9 +92,9 @@ void tb::step() {
 		}
 		if (last_write_response.delay_cycles > 0) {
 			--last_write_response.delay_cycles;
-			if (last_write_response.delay_cycles > 0) {
+			if (last_write_response.delay_cycles == 0) {
 				dp->p_ap__err.set<bool>(last_write_response.err);
-				dp->p_ap__err.set<bool>(1);
+				dp->p_ap__rdy.set<bool>(1);
 			}
 		}
 		if (ap_ren && read_callback) {
@@ -136,8 +136,6 @@ void put_bits(tb &t, const uint8_t *tx, int n_bits) {
 		t.set_swclk(0);
 	}
 }
-
-#include <cstdio>
 
 void get_bits(tb &t, uint8_t *rx, int n_bits) {
 	uint8_t shifter;
