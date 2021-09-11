@@ -8,9 +8,10 @@
 `default_nettype none
 
  module opendap_sw_dp #(
+	// This is a MINDP implementation, so DPIDR[16] *must* be set. (Also I
+	// don't have a JEP106 ID for the DPIDR -- you'll have to bring your own)
 	parameter DPIDR     = 32'hdeadbeef,
-	parameter TARGETID  = 32'hbaadf00d,
-	parameter APSEL_MAX = 8'd0
+	parameter TARGETID  = 32'hbaadf00d
 ) (
 	input  wire        swclk,
 	input  wire        rst_n,
@@ -91,6 +92,9 @@ reg ctrl_stat_readok;
 reg ctrl_stat_stickyerr;
 reg ctrl_stat_stickyorun;
 reg ctrl_stat_wdataerr;
+
+assign cdbgpwrupreq = ctrl_stat_cdbgpwrupreq;
+assign csyspwrupreq = ctrl_stat_csyspwrupreq;
 
 always @ (posedge swclk or negedge rst_n) begin
 	if (!rst_n) begin
