@@ -1,0 +1,4 @@
+set_io swclk 20 # P2_9, the only GBIN-capable header pin
+set_io swdio 21 # P2_3, its vertical neighour on the header
+
+set_io led 37 # Green on main board
