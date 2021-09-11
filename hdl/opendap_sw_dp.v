@@ -115,6 +115,9 @@ always @ (posedge swclk or negedge rst_n) begin
 			// CDBGRSTREQ is implemented RAZ/WI
 			// We are MINDP; implement TRNCNT/MASKLANE/TRNMODE as RAZ/WI.
 			ctrl_stat_orundetect <= hostacc_wdata[0];
+			// B1.2 says STICKYORUN becomes UNKNOWN if ORUNDETECT is cleared when
+			// STICKYORUN is left set. However it seems polite to just clear it.
+			ctrl_stat_stickyorun <= ctrl_stat_stickyorun && hostacc_wdata[0];
 		end
 		if (set_wdataerr)
 			ctrl_stat_wdataerr <= 1'b1;
