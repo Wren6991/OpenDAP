@@ -157,6 +157,8 @@ always @ (*) begin
 		4'h2            // TYPE    = APB2/APB3
 	};
 
+	default: dpacc_rdata = 32'h0;
+
 	endcase
 end
 
