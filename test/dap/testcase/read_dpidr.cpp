@@ -1,0 +1,17 @@
+#include "tb.h"
+#include <cstdio>
+
+// Test intent: hello world (make sure the DP is not broken by the DAP
+// integration -- canary test for when you have really fucked up)
+
+int main() {
+	tb t("waves.vcd");
+	send_dormant_to_swd(t);
+	swd_line_reset(t);
+
+	uint32_t id;
+	swd_status_t status = swd_read(t, DP, DP_REG_DPIDR, id);
+	tb_assert(status == OK, "Bad status: %d\n", (int)status);
+	tb_assert(id == DPIDR_EXPECTED, "Bad DPIDR: %08x\n", id);
+	return 0;
+}

@@ -1,0 +1,67 @@
+[*]
+[*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
+[*] Sun Sep 12 11:17:34 2021
+[*]
+[dumpfile] "/home/luke/proj/opendap/test/dap/testcase/waves.vcd"
+[dumpfile_mtime] "Sun Sep 12 11:12:08 2021"
+[dumpfile_size] 25032
+[savefile] "/home/luke/proj/opendap/test/dap/testcase/waves.gtkw"
+[timestart] 0
+[size] 3840 2123
+[pos] -3891 -938
+*-7.000000 492 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 233
+[signals_width] 182
+[sst_expanded] 1
+[sst_vpaned_height] 674
+@200
+-Serial
+@28
+swclk
+swdi
+swdo
+swdo_en
+@200
+-
+--> DP
+@28
+dp.hostacc_en
+dp.hostacc_ap_ndp
+dp.hostacc_r_nw
+dp.hostacc_addr[1:0]
+dp.hostacc_fault
+dp.hostacc_wait
+@22
+dp.hostacc_wdata[31:0]
+dp.hostacc_rdata[31:0]
+@200
+-
+--> AP
+@22
+ap_sel[7:0]
+ap.dpacc_addr[5:0]
+@28
+ap.dpacc_ren
+ap.dpacc_wen
+ap.dpacc_abort
+ap.dpacc_rdy
+ap.dpacc_err
+@22
+ap.dpacc_wdata[31:0]
+ap.dpacc_rdata[31:0]
+@200
+-
+--> Downstream APB
+@22
+dst_paddr[31:0]
+@28
+dst_pwrite
+dst_psel
+dst_penable
+dst_pready
+dst_pslverr
+@22
+dst_pwdata[31:0]
+dst_prdata[31:0]
+[pattern_trace] 1
+[pattern_trace] 0
