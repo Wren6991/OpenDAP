@@ -213,23 +213,34 @@ wire hostacc_protocol_err =
 // ----------------------------------------------------------------------------
 // Serial comms unit
 
-wire any_sticky_errors = ctrl_stat_stickyorun || ctrl_stat_stickyerr || ctrl_stat_wdataerr;
+// See B4.2.3, B4.2.4 for this list (same list of exceptions for both WAIT and
+// FAULT). See also B4.2.8 for a summary of all target responses.
 
-// AP access when a sticky flag is set causes a FAULT response. We are
-// decoding this straight out of the serial comms' shift register, so must be
-// combinatorial, and not a function of hostacc_en.
+// Bit of a hole in the spec here as you may need to write SELECT to select
+// CTRL/STAT in the first place, so if DPBANKSEL is currently nonzero, it's
+// impossible to read CTRL/STAT and determine which flag is causing your
+// FAULT. Fairly minor issue as the nonzero DPBANKSEL registers are much less
+// used than CTRL/STAT.
 
-assign hostacc_fault = any_sticky_errors && hostacc_ap_ndp;
-
-// When AP is not ready, all AP accesses get WAIT response, and most DP
-// accesses. See B4.2.3 for the list of exceptions, or B4.2.8 for a summary
-// of all responses.
-
-assign hostacc_wait = !(ap_rdy || !hostacc_ap_ndp && (
+wire access_always_ok = !hostacc_ap_ndp && (
 	 hostacc_r_nw && hostacc_addr == 2'b00 ||                          // DPIDR read
 	!hostacc_r_nw && hostacc_addr == 2'b00 ||                          // ABORT write
 	 hostacc_r_nw && hostacc_addr == 2'b01 && select_dpbanksel == 4'h0 // C/S   read
-));
+);
+
+// Most accesses when a sticky flag is set cause a FAULT response. Same is
+// true for WAIT responses when an AP transfer is in flight. The exception is
+// those accesses which are necessary for diagnosing and clearing the fault
+// condition.
+
+wire any_sticky_errors = ctrl_stat_stickyorun || ctrl_stat_stickyerr || ctrl_stat_wdataerr;
+
+// We are decoding this straight out of the serial comms' shift register, so
+// must be combinatorial, and not a function of hostacc_en.
+
+assign hostacc_fault = any_sticky_errors && !access_always_ok;
+
+assign hostacc_wait = !(ap_rdy || access_always_ok);
 
 opendap_sw_dp_serial_comms serial_comms (
 	.swclk               (swclk),

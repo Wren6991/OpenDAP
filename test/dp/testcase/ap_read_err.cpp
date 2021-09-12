@@ -53,7 +53,12 @@ int main() {
 	tb_assert(status == FAULT, "Failed AP access should give FAULT.\n");
 
 	status = swd_write(t, DP, DP_REG_SELECT, DP_BANK_CTRL_STAT);
-	tb_assert(status == OK, "Should never get FAULT on SELECT\n");
+	// Bit of a weird corner of the spec here: you can't write SELECT when
+	// there is a sticky flag set, so it's impossible to actually read
+	// CTRL/STAT if your DPBANKSEL is not already 0. Luckily in this test it
+	// is already 0, and this is usually true in practice too.
+	tb_assert(status == FAULT, "Should get FAULT on select too\n");
+
 	status = swd_read(t, DP, DP_REG_CTRL_STAT, data);
 	tb_assert(status == OK, "Should never get FAULT on CTRL/STAT read\n");
 	tb_assert(data & 0x20, "STICKYERR should be set.\n");
