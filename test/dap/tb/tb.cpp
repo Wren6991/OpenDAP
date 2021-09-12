@@ -63,10 +63,12 @@ void tb::set_instid(uint8_t instid) {
 void tb::step() {
 	cxxrtl_design::p_dap__integration *dp = static_cast<cxxrtl_design::p_dap__integration*>(dut);
 
-	// uint16_t ap_addr = dp->p_ap__addr.get<uint16_t>() | dp->p_ap__sel.get<uint16_t>() << 6;
-	// bool ap_wen = dp->p_ap__wen.get<bool>();
-	// bool ap_ren = dp->p_ap__ren.get<bool>();
-	// uint32_t ap_wdata = dp->p_ap__wdata.get<uint32_t>();
+	// Respond only to setup phase, then assume that access phase happens.
+	// Less state to track.
+	bool apb_start = dp->p_dst__psel.get<bool>() && !dp->p_dst__penable.get<bool>();
+	uint32_t paddr = dp->p_dst__paddr.get<uint32_t>();
+	bool pwrite = dp->p_dst__pwrite.get<bool>();
+	uint32_t pwdata = dp->p_dst__pwdata.get<uint32_t>();
 
 	dp->step();
 	dp->step();
@@ -75,44 +77,43 @@ void tb::step() {
 	waves_fd.flush();
 	vcd.buffer.clear();
 
-	// // Field AP accesses using testcase callbacks if available, and provide AP
-	// // bus responses with correct timing based on callback results.
-	// if (!swclk_prev && dp->p_swclk.get<bool>()) {
-	// 	dp->p_ap__err.set<bool>(0);
-	// 	if (last_read_response.delay_cycles > 0) {
-	// 		--last_read_response.delay_cycles;
-	// 		if (last_read_response.delay_cycles == 0) {
-	// 			dp->p_ap__rdata.set<uint32_t>(last_read_response.rdata);
-	// 			dp->p_ap__err.set<bool>(last_read_response.err);
-	// 			dp->p_ap__rdy.set<bool>(1);
-	// 		}
-	// 	}
-	// 	if (last_write_response.delay_cycles > 0) {
-	// 		--last_write_response.delay_cycles;
-	// 		if (last_write_response.delay_cycles == 0) {
-	// 			dp->p_ap__err.set<bool>(last_write_response.err);
-	// 			dp->p_ap__rdy.set<bool>(1);
-	// 		}
-	// 	}
-	// 	if (ap_ren && read_callback) {
-	// 		last_read_response = read_callback(ap_addr);
-	// 		if (last_read_response.delay_cycles == 0) {
-	// 			dp->p_ap__rdata.set<uint32_t>(last_read_response.rdata);
-	// 			dp->p_ap__err.set<bool>(last_read_response.err);
-	// 		}
-	// 		else {
-	// 			dp->p_ap__rdy.set<bool>(0);
-	// 		}
-	// 	}
-	// 	else if (ap_wen && write_callback) {
-	// 		last_write_response = write_callback(ap_addr, ap_wdata);
-	// 		if (last_write_response.delay_cycles == 0) {
-	// 			dp->p_ap__err.set<bool>(last_write_response.err);
-	// 		}
-	// 		else {
-	// 			dp->p_ap__rdy.set<bool>(0);
-	// 		}
-	// 	}
-	// }
+	// Field APB accesses using testcase callbacks if available, and provide
+	// bus responses with correct timing based on callback results.
+	if (!swclk_prev && dp->p_swclk.get<bool>()) {
+		if (last_read_response.delay_cycles > 0) {
+			--last_read_response.delay_cycles;
+			if (last_read_response.delay_cycles == 0) {
+				dp->p_dst__prdata.set<uint32_t>(last_read_response.rdata);
+				dp->p_dst__pslverr.set<bool>(last_read_response.err);
+				dp->p_dst__pready.set<bool>(1);
+			}
+		}
+		if (last_write_response.delay_cycles > 0) {
+			--last_write_response.delay_cycles;
+			if (last_write_response.delay_cycles == 0) {
+				dp->p_dst__pslverr.set<bool>(last_write_response.err);
+				dp->p_dst__pready.set<bool>(1);
+			}
+		}
+		if (apb_start && !pwrite && read_callback) {
+			last_read_response = read_callback(paddr);
+			if (last_read_response.delay_cycles == 0) {
+				dp->p_dst__prdata.set<uint32_t>(last_read_response.rdata);
+				dp->p_dst__pslverr.set<bool>(last_read_response.err);
+			}
+			else {
+				dp->p_dst__pready.set<bool>(0);
+			}
+		}
+		else if (apb_start && pwrite && write_callback) {
+			last_write_response = write_callback(paddr, pwdata);
+			if (last_write_response.delay_cycles == 0) {
+				dp->p_dst__pslverr.set<bool>(last_write_response.err);
+			}
+			else {
+				dp->p_dst__pready.set<bool>(0);
+			}
+		}
+	}
 	swclk_prev = dp->p_swclk.get<bool>();
 }
