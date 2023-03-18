@@ -237,3 +237,6 @@ assign dpacc_err = bridge_pslverr && error_vld;
 
 endmodule
 
+`ifndef YOSYS
+`default_nettype wire
+`endif

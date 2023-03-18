@@ -160,3 +160,7 @@ always @ (posedge swclk or negedge rst_n) begin
 end
 
 endmodule
+
+`ifndef YOSYS
+`default_nettype wire
+`endif

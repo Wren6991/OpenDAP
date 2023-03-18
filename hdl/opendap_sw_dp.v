@@ -280,3 +280,7 @@ assign ap_wdata = hostacc_wdata;
 assign ap_abort = hostacc_write && !hostacc_ap_ndp && hostacc_addr == 2'b00 && hostacc_wdata[0];
 
 endmodule
+
+`ifndef YOSYS
+`default_nettype wire
+`endif
