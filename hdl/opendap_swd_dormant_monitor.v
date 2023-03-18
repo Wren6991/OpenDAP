@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// Part of the OpenDAP project (c) Luke Wren 2021
+// Part of the OpenDAP project. Original author: Luke Wren
 // SPDX-License-Identifier CC0-1.0
 // ----------------------------------------------------------------------------
 
