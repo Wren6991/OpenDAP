@@ -3,9 +3,10 @@
 // SPDX-License-Identifier CC0-1.0
 // ----------------------------------------------------------------------------
 
-// A 2FF synchronizer to mitigate metastabilities. This is a baseline
-// implementation -- you should replace it with cells specific to your
-// FPGA/process
+// A 2FF synchronizer to mitigate metastabilities. Used in the APB async bridge.
+
+// This is a baseline implementation -- you should replace it with cells
+// specific to your FPGA/process
 
 `ifndef OPENDAP_REG_KEEP_ATTRIBUTE
 `define OPENDAP_REG_KEEP_ATTRIBUTE (* keep = 1'b1 *)
@@ -14,9 +15,9 @@
 module opendap_sync_1bit #(
 	parameter N_STAGES = 2 // Should be >=2
 ) (
-	input wire clk,
-	input wire rst_n,
-	input wire i,
+	input  wire clk,
+	input  wire rst_n,
+	input  wire i,
 	output wire o
 );
 

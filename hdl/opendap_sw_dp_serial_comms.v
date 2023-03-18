@@ -35,14 +35,35 @@
 	input  wire        dp_acc_wait
 );
 
-reg swdi_reg;
-always @ (posedge swclk or negedge rst_n) begin
-	if (!rst_n) begin
-		swdi_reg <= 1'b0;
-	end else begin
-		swdi_reg <= swdi;
-	end
-end
+// ----------------------------------------------------------------------------
+// Single point of registration for SWDIO pad signals
+
+// There is no use of the unregistered signals inside the DP. Note this module
+// is in the cells/ directory, and you are expected to update it with
+// appropriate cells for your FPGA/process, e.g. IO cell registers on FPGA.
+
+wire swdi_reg;
+reg  swdo_nxt;
+reg  swdo_en_nxt;
+
+opendap_swdio_flops io_flops (
+	.clk             (swclk),
+	.rst_n           (rst_n),
+
+	.dp_swdo_next    (swdo_nxt),
+	.dp_swdo_en_next (swdo_en_nxt),
+	.dp_swdi_prev    (swdi_reg),
+
+	.pad_swdo        (swdo),
+	.pad_swdo_en     (swdo_en),
+	.pad_swdi        (swdi)
+);
+
+// ----------------------------------------------------------------------------
+// Dormant monitor -- watch for transitions between Dormant and SWD line states
+
+// This is a separate state machine because e.g. line resets can be embedded
+// in what seem initially to be well-formed SWD transfers.
 
 wire exit_dormant;
 wire enter_dormant;
@@ -51,15 +72,18 @@ wire line_reset;
 opendap_swd_dormant_monitor dormant_monitor (
 	.swclk         (swclk),
 	.rst_n         (rst_n),
+
 	.swdi_reg      (swdi_reg),
 	.exit_dormant  (exit_dormant),
 	.enter_dormant (enter_dormant),
 	.line_reset    (line_reset)
 );
 
+// ----------------------------------------------------------------------------
+// Main DP serial comms state machine
 
-reg [5:0] header_sreg;
-reg       header_sreg_en;
+reg [5:0]  header_sreg;
+reg        header_sreg_en;
 
 reg [31:0] data_sreg;
 reg        data_sreg_en;
@@ -104,9 +128,6 @@ reg [W_LINK_STATE-1:0]  link_state,  link_state_nxt;
 reg [W_PHASE_STATE-1:0] phase,       phase_nxt;
 reg [5:0]               bit_ctr,     bit_ctr_nxt;
 reg                     data_parity, data_parity_nxt;
-
-reg                                  swdo_nxt;
-reg                                  swdo_en_nxt;
 
 always @ (*) begin
 	link_state_nxt = link_state;
@@ -363,3 +384,7 @@ always @ (posedge swclk or negedge rst_n) begin
 end
 
 endmodule
+
+`ifndef YOSYS
+`default_nettype wire
+`endif

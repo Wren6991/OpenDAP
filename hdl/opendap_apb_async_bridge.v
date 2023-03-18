@@ -4,7 +4,7 @@
 // ----------------------------------------------------------------------------
 
 // APB-to-APB asynchronous bridge for bottom side of Mem-AP. Based on the DTM
-// APB async bridge from Hazard3 (also my project, available under DWTFPL v3).
+// APB async bridge from Hazard3 (also my project, available under Apache 2.0).
 //
 // Note this module depends on the opendap_sync_1bit module (a flop-chain
 // synchroniser) which should be reimplemented for your FPGA/process.
