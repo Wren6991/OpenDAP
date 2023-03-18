@@ -20,10 +20,8 @@ int main() {
 	tb t("waves.vcd");
 	t.set_apb_read_callback(read_callback);
 
-	uint32_t id;
-	send_dormant_to_swd(t);
-	swd_line_reset(t);
-	(void)swd_read(t, DP, DP_REG_DPIDR, id);
+	swd_status_t status = swd_prepare_dp_for_ap_access(t);
+	tb_assert(status == OK, "Failed to connect to DP\n");
 
 	const uint32_t CSW_ADDR_INC = 0x10u;
 	(void)swd_write(t, AP, AP_REG_CSW, CSW_ADDR_INC);
@@ -31,7 +29,7 @@ int main() {
 
 	// Priming AP read, kicks off first transfer. Data is not meaningful.
 	uint32_t data;
-	swd_status_t status = swd_read(t, AP, AP_REG_DRW, data);
+	status = swd_read(t, AP, AP_REG_DRW, data);
 	tb_assert(status == OK, "Should get OK on priming read\n");
 
 	// Note this is also an AP read, not RDBUFF. Normally this would cause a

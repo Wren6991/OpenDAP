@@ -19,10 +19,8 @@ int main() {
 	tb t("waves.vcd");
 	t.set_apb_read_callback(read_callback);
 
-	uint32_t id;
-	send_dormant_to_swd(t);
-	swd_line_reset(t);
-	(void)swd_read(t, DP, DP_REG_DPIDR, id);
+	swd_status_t status = swd_prepare_dp_for_ap_access(t);
+	tb_assert(status == OK, "Failed to connect to DP\n");
 
 	const uint32_t CSW_ADDR_INC = 0x10u;
 	(void)swd_write(t, AP, AP_REG_CSW, CSW_ADDR_INC);
@@ -30,7 +28,7 @@ int main() {
 
 	uint32_t data;
 	(void)swd_read(t, AP, AP_REG_TAR, data);
-	swd_status_t status = swd_read(t, DP, DP_REG_RDBUF, data);
+	status = swd_read(t, DP, DP_REG_RDBUF, data);
 	tb_assert(status == OK && data == start_addr, "Bad readback of start address\n");
 
 	// Priming AP read, kicks off first transfer. Data is not meaningful.

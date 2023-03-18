@@ -24,3 +24,7 @@ In this system, the RISC-V cores provide debugger access to system memory. An ad
 The contents of this repository is licensed under CC0 1.0 Universal, which is similar to a public domain dedication. I wrote all of the code in this repository with reference to the [ADIv5.2 specification](https://developer.arm.com/documentation/ihi0031/latest/) for my own education and better understanding of the specification. I hope that publishing this RTL will help others to understand parts of the specification that I struggled with.
 
 Note that while this licence covers my own original Verilog source code, contained in this repository, it doesn't cover any underlying Arm intellectual property in ADIv5.2 or related Arm specifications. Seek legal advice, and ideally speak with your Arm handler, before deploying this RTL. Note also that I have no legal training, and the contents of this README does not constitute legal advice.
+
+## TODO
+
+* Consider using APB3 for DP->AP interface
