@@ -17,11 +17,8 @@ int main() {
 	tb t("waves.vcd");
 	t.set_ap_read_callback(read_callback);
 
-	send_dormant_to_swd(t);
-	swd_line_reset(t);
-
-	uint32_t id;
-	swd_status_t status = swd_read(t, DP, DP_REG_DPIDR, id);
+	swd_status_t status = swd_prepare_dp_for_ap_access(t);
+	tb_assert(status == OK, "Failed to connect to DP\n");
 
 	for (unsigned  apsel = 0; apsel < 256; apsel = apsel ? apsel << 1 : 1) {
 		for (unsigned bank = 0; bank < 16; ++bank) {

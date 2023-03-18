@@ -7,7 +7,7 @@
 #include <backends/cxxrtl/cxxrtl_vcd.h>
 
 tb::tb(std::string vcdfile) {
-	// Raw pointer... CXXRTL doesn't give us the type declaration wihout also
+	// Raw pointer... CXXRTL doesn't give us the type declaration without also
 	// giving us non-inlined implementation, and I'm not very good at C++, so
 	// we do this shit
 	cxxrtl_design::p_opendap__sw__dp *dp = new cxxrtl_design::p_opendap__sw__dp;
@@ -118,4 +118,9 @@ void tb::step() {
 		}
 	}
 	swclk_prev = dp->p_swclk.get<bool>();
+
+	// Tie back REQs to ACKs so they can be toggled
+	dp->p_csyspwrupack.set<bool>(dp->p_csyspwrupreq.get<bool>());
+	dp->p_cdbgpwrupack.set<bool>(dp->p_cdbgpwrupreq.get<bool>());
+	dp->p_cdbgrstack.set<bool>(dp->p_cdbgrstreq.get<bool>());
 }

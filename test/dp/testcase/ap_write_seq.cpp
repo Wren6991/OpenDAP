@@ -18,10 +18,9 @@ ap_write_response write_callback(uint16_t addr, uint32_t data) {
 int main() {
 	tb t("waves.vcd");
 	t.set_ap_write_callback(write_callback);
-	send_dormant_to_swd(t);
-	swd_line_reset(t);
-	uint32_t id;
-	swd_status_t status = swd_read(t, DP, DP_REG_DPIDR, id);
+
+	swd_status_t status = swd_prepare_dp_for_ap_access(t);
+	tb_assert(status == OK, "Failed to connect to DP\n");
 
 	const uint32_t magic = 0xabcd1234;
 	std::vector<uint64_t> expected_write_seq;

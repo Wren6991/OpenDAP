@@ -21,38 +21,51 @@ enum swd_status_t {
 	DISCONNECTED = 7
 };
 
-const int DP_REG_DPIDR = 0;
-const int DP_REG_ABORT = 0;
-const int DP_REG_CTRL_STAT = 1;
-const int DP_REG_DLCR = 1;
-const int DP_REG_TARGETID = 1;
-const int DP_REG_DLPIDR = 1;
-const int DP_REG_EVENTSTAT = 1;
-const int DP_REG_RESEND = 2;
-const int DP_REG_SELECT = 2;
-const int DP_REG_RDBUF = 3;
-const int DP_REG_TARGETSEL = 3;
+static const int DP_REG_DPIDR      = 0;
+static const int DP_REG_ABORT      = 0;
+static const int DP_REG_CTRL_STAT  = 1;
+static const int DP_REG_DLCR       = 1;
+static const int DP_REG_TARGETID   = 1;
+static const int DP_REG_DLPIDR     = 1;
+static const int DP_REG_EVENTSTAT  = 1;
+static const int DP_REG_RESEND     = 2;
+static const int DP_REG_SELECT     = 2;
+static const int DP_REG_RDBUF      = 3;
+static const int DP_REG_TARGETSEL  = 3;
 
-const int DP_BANK_CTRL_STAT = 0;
-const int DP_BANK_DLCR = 1;
-const int DP_BANK_TARGETID = 2;
-const int DP_BANK_DLPIDR = 3;
-const int DP_BANK_EVENTSTAT = 4;
+static const int DP_BANK_CTRL_STAT = 0;
+static const int DP_BANK_DLCR      = 1;
+static const int DP_BANK_TARGETID  = 2;
+static const int DP_BANK_DLPIDR    = 3;
+static const int DP_BANK_EVENTSTAT = 4;
 
-const int AP_REG_CSW  = 0;
-const int AP_REG_TAR  = 1;
-const int AP_REG_DRW  = 3;
-const int AP_REG_CFG  = 0;
-const int AP_REG_BASE = 2;
-const int AP_REG_IDR  = 3;
+static const uint32_t DP_CTRL_STAT_CSYSPWRUPACK = 1u << 31;
+static const uint32_t DP_CTRL_STAT_CSYSPWRUPREQ = 1u << 30;
+static const uint32_t DP_CTRL_STAT_CDBGPWRUPACK = 1u << 29;
+static const uint32_t DP_CTRL_STAT_CDBGPWRUPREQ = 1u << 28;
+static const uint32_t DP_CTRL_STAT_CDBGRSTACK   = 1u << 27;
+static const uint32_t DP_CTRL_STAT_CDBGRSTREQ   = 1u << 26;
+static const uint32_t DP_CTRL_STAT_WDATAERR     = 1u << 7;
+static const uint32_t DP_CTRL_STAT_READOK       = 1u << 6;
+static const uint32_t DP_CTRL_STAT_STICKYERR    = 1u << 5;
+static const uint32_t DP_CTRL_STAT_STICKYCMP    = 1u << 4;
+static const uint32_t DP_CTRL_STAT_STICKYORUN   = 1u << 1;
+static const uint32_t DP_CTRL_STAT_ORUNDETECT   = 1u << 0;
 
-const int AP_BANK_CSW  = 0 << 4;
-const int AP_BANK_TAR  = 0 << 4;
-const int AP_BANK_DRW  = 0 << 4;
-const int AP_BANK_BDx  = 1 << 4;
-const int AP_BANK_CFG  = 0xf << 4;
-const int AP_BANK_BASE = 0xf << 4;
-const int AP_BANK_IDR  = 0xf << 4;
+static const int AP_REG_CSW   = 0;
+static const int AP_REG_TAR   = 1;
+static const int AP_REG_DRW   = 3;
+static const int AP_REG_CFG   = 0;
+static const int AP_REG_BASE  = 2;
+static const int AP_REG_IDR   = 3;
+
+static const int AP_BANK_CSW  = 0 << 4;
+static const int AP_BANK_TAR  = 0 << 4;
+static const int AP_BANK_DRW  = 0 << 4;
+static const int AP_BANK_BDx  = 1 << 4;
+static const int AP_BANK_CFG  = 0xf << 4;
+static const int AP_BANK_BASE = 0xf << 4;
+static const int AP_BANK_IDR  = 0xf << 4;
 
 // Convenience functions
 
@@ -71,3 +84,5 @@ swd_status_t swd_read(tb &t, ap_dp_t ap_dp, uint8_t addr, uint32_t &data);
 swd_status_t swd_write(tb &t, ap_dp_t ap_dp, uint8_t addr, uint32_t data);
 swd_status_t swd_read_orun(tb &t, ap_dp_t ap_dp, uint8_t addr, uint32_t &data);
 swd_status_t swd_write_orun(tb &t, ap_dp_t ap_dp, uint8_t addr, uint32_t data);
+
+swd_status_t swd_prepare_dp_for_ap_access(tb &t);

@@ -176,3 +176,42 @@ swd_status_t swd_write(tb &t, ap_dp_t ap_ndp, uint8_t addr, uint32_t data) {
 swd_status_t swd_write_orun(tb &t, ap_dp_t ap_ndp, uint8_t addr, uint32_t data) {
 	return swd_write_impl(t, ap_ndp, addr, data, true);
 }
+
+swd_status_t swd_prepare_dp_for_ap_access(tb &t) {
+	send_dormant_to_swd(t);
+	swd_line_reset(t);
+
+	// DPIDR read required to leave Reset state
+	uint32_t data;
+	swd_status_t status = swd_read(t, DP, DP_REG_DPIDR, data);
+	if (status != OK) {
+		return status;
+	}
+
+	// Clear any outstanding errors via ABORT so that SELECT becomes writable
+	// (See B4.2.8)
+	status = swd_write(t, DP, DP_REG_ABORT, 0x1e);
+	if (status != OK) {
+		return status;
+	}
+
+	// Power up before attempting AP accesses
+	status = swd_write(t, DP, DP_REG_SELECT, DP_BANK_CTRL_STAT);
+	if (status != OK) {
+		return status;
+	}
+	status = swd_write(t, DP, DP_REG_CTRL_STAT, DP_CTRL_STAT_CSYSPWRUPREQ | DP_CTRL_STAT_CDBGPWRUPREQ);
+	if (status != OK) {
+		return status;
+	}
+	// Check for ACK. Assume there is no delay (true in tb), so don't bother with poll timeout.
+	status = swd_read(t, DP, DP_REG_CTRL_STAT, data);
+	if (status != OK) {
+		return status;
+	}
+	if ((data & (DP_CTRL_STAT_CSYSPWRUPACK | DP_CTRL_STAT_CDBGPWRUPACK)) != (DP_CTRL_STAT_CSYSPWRUPACK | DP_CTRL_STAT_CDBGPWRUPACK)) {
+		return FAULT;
+	}
+	return OK;
+}
+
