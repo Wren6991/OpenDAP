@@ -52,6 +52,8 @@ wire        cdbgpwrupreq;
 wire        cdbgpwrupack = cdbgpwrupreq;
 wire        csyspwrupreq;
 wire        csyspwrupack = csyspwrupreq;
+wire cdbgrstreq;
+wire cdbgrstack = cdbgrstreq;
 
 // Note eventstat is an active-low event signal, so tied high if unused.
 wire [3:0]  instid = 4'h0;
@@ -82,6 +84,8 @@ opendap_sw_dp #(
 	.cdbgpwrupack (cdbgpwrupack),
 	.csyspwrupreq (csyspwrupreq),
 	.csyspwrupack (csyspwrupack),
+	.cdbgrstreq   (cdbgrstreq),
+	.cdbgrstack   (cdbgrstack),
 
 	.instid       (instid),
 	.eventstat    (eventstat),

@@ -40,6 +40,8 @@ wire cdbgpwrupreq;
 wire cdbgpwrupack = cdbgpwrupreq;
 wire csyspwrupreq;
 wire csyspwrupack = csyspwrupreq;
+wire cdbgrstreq;
+wire cdbgrstack = cdbgrstreq;
 
 wire [7:0]  ap_sel;
 wire [5:0]  ap_addr;
@@ -66,6 +68,8 @@ opendap_sw_dp #(
 	.cdbgpwrupack (cdbgpwrupack),
 	.csyspwrupreq (csyspwrupreq),
 	.csyspwrupack (csyspwrupack),
+	.cdbgrstreq   (cdbgrstreq),
+	.cdbgrstack   (cdbgrstack),
 
 	.instid       (instid),
 	.eventstat    (eventstat),

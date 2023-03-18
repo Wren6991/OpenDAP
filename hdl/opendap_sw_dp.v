@@ -24,6 +24,8 @@
 	input  wire        cdbgpwrupack,
 	output wire        csyspwrupreq,
 	input  wire        csyspwrupack,
+	output wire        cdbgrstreq,
+	input  wire        cdbgrstack,
 
 	input  wire [3:0]  instid,
 	input  wire        eventstat,
@@ -87,14 +89,16 @@ end
 
 reg ctrl_stat_csyspwrupreq;
 reg ctrl_stat_cdbgpwrupreq;
+reg ctrl_stat_cdbgrstreq;
 reg ctrl_stat_orundetect;
 reg ctrl_stat_readok;
 reg ctrl_stat_stickyerr;
 reg ctrl_stat_stickyorun;
 reg ctrl_stat_wdataerr;
 
-assign cdbgpwrupreq = ctrl_stat_cdbgpwrupreq;
 assign csyspwrupreq = ctrl_stat_csyspwrupreq;
+assign cdbgpwrupreq = ctrl_stat_cdbgpwrupreq;
+assign cdbgrstreq   = ctrl_stat_cdbgrstreq;
 
 always @ (posedge swclk or negedge rst_n) begin
 	if (!rst_n) begin
@@ -116,7 +120,7 @@ always @ (posedge swclk or negedge rst_n) begin
 			// CTRL/STAT write
 			ctrl_stat_csyspwrupreq <= hostacc_wdata[30];
 			ctrl_stat_cdbgpwrupreq <= hostacc_wdata[28];
-			// CDBGRSTREQ is implemented RAZ/WI
+			ctrl_stat_cdbgrstreq   <= hostacc_wdata[26];
 			// We are MINDP; implement TRNCNT/MASKLANE/TRNMODE as RAZ/WI.
 			ctrl_stat_orundetect <= hostacc_wdata[0];
 			// B1.2 says STICKYORUN becomes UNKNOWN if ORUNDETECT is cleared when
@@ -144,7 +148,8 @@ always @ (*) begin
 			ctrl_stat_csyspwrupreq,
 			cdbgpwrupack,
 			ctrl_stat_cdbgpwrupreq,
-			2'b00,                            // CDBGRSTACK/CDBGRSTREQ
+			cdbgrstack,
+			ctrl_stat_cdbgrstreq,
 			2'b00,                            // RES0
 			12'h0,                            // TRNCOUNT
 			4'h0,                             // MASKLANE
